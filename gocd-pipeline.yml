@@ -1,35 +1,17 @@
 pipelines:
-  ui-deployment-pipeline:
-    group: ui-deployment
+  test-pipeline:
+    group: test-group
     label_template: "${COUNT}"
     materials:
       git:
         url: https://github.com/suryaveerubhotla/simple-ui.git
         branch: main
     stages:
-      - fetch_and_deploy:
+      - test-stage:
           jobs:
-            - deploy_ui:
+            - test-job:
                 tasks:
                   - exec:
-                      command: rm
+                      command: echo
                       arguments:
-                        - -rf
-                        - /var/www/ui
-                  - exec:
-                      command: mkdir
-                      arguments:
-                        - -p
-                        - /var/www/ui
-                  - exec:
-                      command: cp
-                      arguments:
-                        - -r
-                        - "*"
-                        - /var/www/ui
-                  - exec:
-                      command: sudo
-                      arguments:
-                        - systemctl
-                        - restart
-                        - nginx
+                        - "Hello, GoCD Pipeline!"
