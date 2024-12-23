@@ -1,0 +1,35 @@
+pipelines:
+  ui-deployment-pipeline:
+    group: ui-deployment
+    label_template: "${COUNT}"
+    materials:
+      git:
+        url: https://github.com/<username>/simple-ui.git
+        branch: main
+    stages:
+      - fetch_and_deploy:
+          jobs:
+            - deploy_ui:
+                tasks:
+                  - exec:
+                      command: rm
+                      arguments:
+                        - -rf
+                        - /var/www/ui
+                  - exec:
+                      command: mkdir
+                      arguments:
+                        - -p
+                        - /var/www/ui
+                  - exec:
+                      command: cp
+                      arguments:
+                        - -r
+                        - *
+                        - /var/www/ui
+                  - exec:
+                      command: sudo
+                      arguments:
+                        - systemctl
+                        - restart
+                        - nginx
