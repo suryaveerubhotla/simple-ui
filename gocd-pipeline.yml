@@ -7,7 +7,7 @@ pipelines:
     display_order: -1
     materials:
       git-05a4d8c:
-        git: https://github.com/sveerubhotla/simple-ui.git    
+        git: https://github.com/suryaveerubhotla/simple-ui.git    
         shallow_clone: false
         auto_update: true
         branch: main
