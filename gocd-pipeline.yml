@@ -1,79 +1,77 @@
----
 format_version: 10
 pipelines:
-  Deployment:
+  jktest04:
     group: defaultGroup
     label_template: ${COUNT}
     lock_behavior: none
     display_order: -1
     materials:
-      git-dd7042d:
-        git:
-          url: https://github.com/suryaveerubhotla/simple-ui.git
-          branch: main
-          shallow_clone: false
-          auto_update: true
-    environment_variables:
-      WORKDIR: /home/ubuntu/prime-square
-      SERVICE: PrimeSquare.service
-      JAR_PATTERN: core-*.jar
+      git-05a4d8c:
+        git: https://github.com/sveerubhotla/simple-ui.git    
+        shallow_clone: false
+        auto_update: true
+        branch: main
     stages:
-      - BE-Deploy:
-          fetch_materials: true
-          keep_artifacts: false
-          clean_workspace: false
-          approval:
-            type: success
-            allow_only_on_success: false
-          jobs:
-            - Deploy:
-                timeout: 0
-                tasks:
-                  - exec:
-                      command: /bin/bash
-                      arguments:
-                        - -c
-                        - >
-                          # Use declared variables
-
-                          echo "Stopping service ${SERVICE}..."
-
-                          sudo systemctl stop ${SERVICE}
+    - Deploy-and-test:
+        fetch_materials: true
+        keep_artifacts: false
+        clean_workspace: false
+        approval:
+          type: success
+          allow_only_on_success: false
+        jobs:
+          run-commands:
+            timeout: 0
+            tasks:
+              - exec:
+                    command: /bin/bash
+                    arguments:
+                      - -c
+                      - >
+                        echo "Stopping service ${SERVICE}..."
 
 
-                          # Extract the build name and find the JAR file
-
-                          BUILD_NAME=$(basename $(pwd))
-
-                          echo "Build name extracted: $BUILD_NAME"
+                        sudo systemctl stop ${SERVICE}
 
 
-                          JAR_FILE=$(find app-repo -type f -name "${JAR_PATTERN}" | head -n 1)
-
-                          if [ -z "${JAR_FILE}" ]; then
-                            echo "No JAR file matching '${JAR_PATTERN}' found!"
-                            exit 1
-                          fi
-
-                          echo "Found JAR file: ${JAR_FILE}"
+                        BUILD_NAME=$(basename $(pwd))
 
 
-                          # Move the new JAR to the workdir
-
-                          TARGET_JAR="${WORKDIR}/$(basename ${JAR_FILE})"
-
-                          if [ -f "${TARGET_JAR}" ]; then
-                            echo "Removing existing JAR in ${WORKDIR}..."
-                            rm -f "${TARGET_JAR}"
-                          fi
-
-                          echo "Copying new JAR to ${WORKDIR}..."
-
-                          cp "${JAR_FILE}" "${TARGET_JAR}"
+                        echo "Build name extracted:$BUILD_NAME"
 
 
-                          # Restart the service
 
-                          echo "Starting service ${SERVICE}..."
+                        JAR_FILE=$(find app-repo -type f -name "${JAR_PATTERN}" | head -n 1)
 
-                          sudo systemctl start ${SERVICE}
+
+                        if [ -z "${JAR_FILE}" ]; then
+                          echo "No JAR file matching '${JAR_PATTERN}' found!"
+                          exit 1
+                        fi
+
+
+                        echo "Found JAR file: ${JAR_FILE}"
+
+
+                        TARGET_JAR="${WORKDIR}/$(basename ${JAR_FILE})"
+
+
+                        if [ -f "${TARGET_JAR}" ]; then
+                          echo "Removing existing JAR in ${WORKDIR}..."
+                          rm -f "${TARGET_JAR}"
+                        fi
+
+
+                        echo "Copying new JAR to ${WORKDIR}..."
+
+
+                        cp "${JAR_FILE}" "${TARGET_JAR}"
+
+
+                        echo "Starting service ${SERVICE}..."
+
+
+                        sudo systemctl start ${SERVICE}
+
+                run_if: passed
+ 
