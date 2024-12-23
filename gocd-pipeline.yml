@@ -9,9 +9,7 @@ pipelines:
     materials:
       git-dd7042d:
         git:
-          url: https://github.com/jk0789/gocd_code.git
-          username: jk0789
-          encrypted_password: AES:G+k5P/AskkV1LFOxFYEAog==:QmHcs+OTwQL/GwdPLp2WYw==
+          url: https://github.com/suryaveerubhotla/simple-ui.git
           branch: main
           shallow_clone: false
           auto_update: true
