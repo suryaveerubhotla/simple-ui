@@ -1,0 +1,78 @@
+format_version: 10
+pipelines:
+  jktest04:
+    group: defaultGroup
+    label_template: ${COUNT}
+    lock_behavior: none
+    display_order: -1
+    materials:
+      git-05a4d8c:
+        git: https://github.com/suryaveerubhotla/simple-ui.git    
+        shallow_clone: false
+        auto_update: true
+        branch: main
+    stages:
+    - Deploy-and-test:
+        fetch_materials: true
+        keep_artifacts: false
+        clean_workspace: false
+        approval:
+          type: success
+          allow_only_on_success: false
+        jobs:
+          run-commands:
+            timeout: 0
+            tasks:
+              - exec:
+                    command: /bin/bash
+                    arguments:
+                      - -c
+                      - >
+
+                        echo "Stopping service ${SERVICE}..."
+
+
+                        sudo systemctl stop ${SERVICE}
+
+
+                        BUILD_NAME=$(basename $(pwd))
+
+
+                        echo "Build name extracted:$BUILD_NAME"
+
+
+
+                        JAR_FILE=$(find app-repo -type f -name "${JAR_PATTERN}" | head -n 1)
+
+
+                        if [ -z "${JAR_FILE}" ]; then
+                          echo "No JAR file matching '${JAR_PATTERN}' found!"
+                          exit 1
+                        fi
+
+
+                        echo "Found JAR file: ${JAR_FILE}"
+
+
+                        TARGET_JAR="${WORKDIR}/$(basename ${JAR_FILE})"
+
+
+                        if [ -f "${TARGET_JAR}" ]; then
+                          echo "Removing existing JAR in ${WORKDIR}..."
+                          rm -f "${TARGET_JAR}"
+                        fi
+
+
+                        echo "Copying new JAR to ${WORKDIR}..."
+
+
+                        cp "${JAR_FILE}" "${TARGET_JAR}"
+
+
+                        echo "Starting service ${SERVICE}..."
+
+
+                        sudo systemctl start ${SERVICE}
+
+                run_if: passed
+ 
