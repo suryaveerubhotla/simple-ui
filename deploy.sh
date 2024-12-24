@@ -1,12 +1,13 @@
 #!/bin/bash
 
-# Define target directory
-TARGET_DIR=/home/ubuntu/prime-square
+# Ensure the target directory exists
+mkdir -p /home/ubuntu/prime-square
 
-# Create the directory if it doesn't exist
-mkdir -p $TARGET_DIR
+# Copy the JAR file from the workspace to the target directory
+cp HelloWorld.jar /home/ubuntu/prime-square/
 
-# Copy the JAR file to the target directory
-cp HelloWorld.jar $TARGET_DIR
+# Set permissions on the JAR file (optional but recommended)
+chmod 755 /home/ubuntu/prime-square/HelloWorld.jar
 
-echo "JAR file deployed to $TARGET_DIR"
+# Output a success message
+echo "JAR file has been deployed to /home/ubuntu/prime-square"
