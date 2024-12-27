@@ -4,26 +4,10 @@
 TARGET_DIR="/home/ubuntu/GOCD"
 WORKSPACE="/var/lib/go-agent/pipelines/JarDeploymentPipeline"
 
-# Adjust permissions on /home/ubuntu to allow directory creation
-echo "Adjusting permissions on /home/ubuntu..."
-if sudo chmod 775 /home/ubuntu && sudo chown -R go:go /home/ubuntu; then
-  echo "Permissions adjusted successfully."
-else
-  echo "ERROR: Unable to adjust permissions on /home/ubuntu. Check sudo privileges."
-  exit 1
-fi
-
 # Create the target directory if it doesn't exist
 echo "Creating directory: ${TARGET_DIR}"
 if ! mkdir -p "${TARGET_DIR}"; then
   echo "ERROR: Unable to create directory ${TARGET_DIR}. Check permissions."
-  exit 1
-fi
-
-# Update ownership of the target directory
-echo "Setting ownership of ${TARGET_DIR} to user 'go'"
-if ! sudo chown -R go:go "${TARGET_DIR}"; then
-  echo "ERROR: Unable to change ownership of ${TARGET_DIR}. Check permissions."
   exit 1
 fi
 
