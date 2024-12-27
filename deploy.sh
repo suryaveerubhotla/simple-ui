@@ -20,6 +20,13 @@ if ! mkdir -p "${TARGET_DIR}"; then
   exit 1
 fi
 
+# Update ownership of the target directory
+echo "Setting ownership of ${TARGET_DIR} to user 'go'"
+if ! sudo chown -R go:go "${TARGET_DIR}"; then
+  echo "ERROR: Unable to change ownership of ${TARGET_DIR}. Check permissions."
+  exit 1
+fi
+
 # Copy the JAR file to the target directory
 echo "Copying HelloWorld.jar to ${TARGET_DIR}"
 if [ -f "${WORKSPACE}/HelloWorld.jar" ]; then
