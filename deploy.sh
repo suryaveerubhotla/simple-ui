@@ -10,17 +10,17 @@ if [ ! -x "${WORKSPACE}/deploy.sh" ]; then
   chmod +x "${WORKSPACE}/deploy.sh"
 fi
 
-# Create the target directory if it doesn't exist
-echo "Creating directory: ${TARGET_DIR}"
-if ! mkdir -p "${TARGET_DIR}"; then
-  echo "ERROR: Unable to create directory ${TARGET_DIR}. Check permissions."
-  exit 1
-fi
-
 # Update ownership of the target directory
 echo "Setting ownership of ${TARGET_DIR} to user 'go'"
 if ! sudo chown -R go:go "${TARGET_DIR}"; then
   echo "ERROR: Unable to change ownership of ${TARGET_DIR}. Check permissions."
+  exit 1
+fi
+
+# Create the target directory if it doesn't exist
+echo "Creating directory: ${TARGET_DIR}"
+if ! mkdir -p "${TARGET_DIR}"; then
+  echo "ERROR: Unable to create directory ${TARGET_DIR}. Check permissions."
   exit 1
 fi
 
