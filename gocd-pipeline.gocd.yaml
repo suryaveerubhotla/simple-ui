@@ -44,6 +44,6 @@ pipelines:
                           fi
 
 environments:
-  jdeployandtest:
+  deployandtest:
     pipelines:
       - GOCD-pipeline-as-code
