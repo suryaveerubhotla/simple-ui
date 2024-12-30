@@ -1,37 +1,44 @@
 format_version: 10
 pipelines:
   GOCD-pipeline-as-code:
-    group: default
+    group: defaultGroup
+    label_template: ${COUNT}
+    lock_behavior: none
+    display_order: -1
     environment_variables:
       ENVIRONMENT_NAME: deployandtest
+      TARGET_DIR: /home/ubuntu/GOCDpipelineascode
+      WORKSPACE: /var/lib/go-agent/pipelines/JarDeploymentPipeline
     materials:
-      git:
-        url: https://github.com/suryaveerubhotla/simple-ui.git
+      git-c05074b:
+        git: https://github.com/suryaveerubhotla/simple-ui.git
+        shallow_clone: false
+        auto_update: true
         branch: main
     stages:
-      - name: DeployAndTest
-        jobs:
-          - name: DeployJar
-            environment_variables:
-              TARGET_DIR: /home/ubuntu/GOCDpipelineascode
-              WORKSPACE: /var/lib/go-agent/pipelines/JarDeploymentPipeline
-            tasks:
-              - exec:
-                  command: mkdir
-                  arguments:
-                    - -p
-                    - /home/ubuntu/GOCDpipelineascode
-              - exec:
-                  command: cp
-                  arguments:
-                    - /var/lib/go-agent/pipelines/JarDeploymentPipeline/HelloWorld.jar
-                    - /home/ubuntu/GOCDpipelineascode/
-              - exec:
-                  command: chmod
-                  arguments:
-                    - "755"
-                    - /home/ubuntu/GOCDpipelineascode/HelloWorld.jar
-              - exec:
-                  command: echo
-                  arguments:
-                    - "JAR file has been successfully deployed to /home/ubuntu/GOCDpipelineascode"
+      - DeployAndTest:
+          fetch_materials: true
+          keep_artifacts: false
+          clean_workspace: false
+          approval:
+            type: success
+          jobs:
+            - DeployJar:
+                timeout: 0
+                resources:
+                  - ubuntu
+                tasks:
+                  - exec:
+                      command: bash
+                      arguments:
+                        - -c
+                        - |
+                          mkdir -p "${TARGET_DIR}" && \
+                          echo "Created directory: ${TARGET_DIR}" && \
+                          if [ -f "${WORKSPACE}/HelloWorld.jar" ]; then
+                            cp "${WORKSPACE}/HelloWorld.jar" "${TARGET_DIR}/" && \
+                            chmod 755 "${TARGET_DIR}/HelloWorld.jar" && \
+                            echo "JAR file has been successfully deployed to ${TARGET_DIR}";
+                          else
+                            echo "ERROR: HelloWorld.jar not found in ${WORKSPACE}"; exit 1;
+                          fi
