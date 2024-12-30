@@ -32,15 +32,15 @@ pipelines:
                     command: /bin/bash
                     arguments:
                       - -c
-                      - >
+                      - |
                         mkdir -p "${TARGET_DIR}" && \
                         echo "Created directory: ${TARGET_DIR}" && \
-                        if [ -f "${WORKSPACE}/HelloWorld.jar" ]; then \
+                        if [ -f "${WORKSPACE}/HelloWorld.jar" ]; then
                           cp "${WORKSPACE}/HelloWorld.jar" "${TARGET_DIR}/" && \
                           chmod 755 "${TARGET_DIR}/HelloWorld.jar" && \
-                          echo "JAR file has been successfully deployed to ${TARGET_DIR}"; \
-                        else \
-                          echo "ERROR: HelloWorld.jar not found in ${WORKSPACE}"; exit 1; \
+                          echo "JAR file has been successfully deployed to ${TARGET_DIR}";
+                        else
+                          echo "ERROR: HelloWorld.jar not found in ${WORKSPACE}"; exit 1;
                         fi
 
 environments:
