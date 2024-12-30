@@ -23,7 +23,7 @@ pipelines:
           approval:
             type: success
           jobs:
-            - DeployJar:
+            run-commands:
                 timeout: 0
                 resources:
                   - ubuntu
