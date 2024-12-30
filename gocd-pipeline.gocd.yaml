@@ -1,3 +1,4 @@
+---
 format_version: 10
 pipelines:
   GOCD-pipeline-as-code:
@@ -9,7 +10,7 @@ pipelines:
         url: https://github.com/suryaveerubhotla/simple-ui.git
         branch: main
     stages:
-      - name: Deploy-and-test
+      - name: DeployAndTest
         jobs:
           - name: DeployJar
             environment_variables:
@@ -20,18 +21,19 @@ pipelines:
                   command: mkdir
                   arguments:
                     - -p
-                    - "{{TARGET_DIR}}"
+                    - /home/ubuntu/GOCDpipelineascode
               - exec:
                   command: cp
                   arguments:
-                    - "{{WORKSPACE}}/HelloWorld.jar"
-                    - "{{TARGET_DIR}}/"
+                    - /var/lib/go-agent/pipelines/JarDeploymentPipeline/HelloWorld.jar
+                    - /home/ubuntu/GOCDpipelineascode/
               - exec:
                   command: chmod
                   arguments:
                     - "755"
-                    - "{{TARGET_DIR}}/HelloWorld.jar"
+                    - /home/ubuntu/GOCDpipelineascode/HelloWorld.jar
               - exec:
                   command: echo
                   arguments:
-                    - JAR file has been successfully deployed to {{TARGET_DIR}}
+                    - JAR file has been successfully deployed to
+                      /home/ubuntu/GOCDpipelineascode
