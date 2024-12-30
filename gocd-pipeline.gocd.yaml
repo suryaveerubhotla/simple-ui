@@ -5,9 +5,9 @@ pipelines:
     environment_variables:
       ENVIRONMENT_NAME: deployandtest
     materials:
-      - git:
-          url: https://github.com/suryaveerubhotla/simple-ui.git
-          branch: main
+      git:
+        url: https://github.com/suryaveerubhotla/simple-ui.git
+        branch: main
     stages:
       - name: DeployAndTest
         jobs:
