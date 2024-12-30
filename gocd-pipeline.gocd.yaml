@@ -42,3 +42,8 @@ pipelines:
                           else
                             echo "ERROR: HelloWorld.jar not found in ${WORKSPACE}"; exit 1;
                           fi
+
+environments:
+  jdeployandtest:
+    pipelines:
+      - GOCD-pipeline-as-code
