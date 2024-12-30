@@ -29,10 +29,10 @@ pipelines:
                   - ubuntu
                 tasks:
                   - exec:
-                      command: bash
+                      command: /bin/bash
                       arguments:
                         - -c
-                        - |
+                        - >
                           mkdir -p "${TARGET_DIR}" && \
                           echo "Created directory: ${TARGET_DIR}" && \
                           if [ -f "${WORKSPACE}/HelloWorld.jar" ]; then
