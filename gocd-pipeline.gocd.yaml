@@ -34,4 +34,4 @@ pipelines:
               - exec:
                   command: echo
                   arguments:
-                    - JAR file has been successfully deployed to /home/ubuntu/GOCDpipelineascode
+                    - "JAR file has been successfully deployed to /home/ubuntu/GOCDpipelineascode"
