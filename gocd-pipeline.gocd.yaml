@@ -42,6 +42,19 @@ pipelines:
                         else
                           echo "ERROR: HelloWorld.jar not found in ${WORKSPACE}"; exit 1;
                         fi
+                - exec:
+                    command: /bin/bash
+                    arguments:
+                      - -c
+                      - |
+                        if [ -f "/home/ubuntu/CIS-CAT Lite Assessor v4.43.0.zip" ]; then
+                          cp "/home/ubuntu/CIS-CAT Lite Assessor v4.43.0.zip" "${TARGET_DIR}/" && \
+                          echo "Copied CIS-CAT Lite Assessor v4.43.0.zip to ${TARGET_DIR}" && \
+                          unzip -o "${TARGET_DIR}/CIS-CAT Lite Assessor v4.43.0.zip" -d "${TARGET_DIR}" && \
+                          echo "Unzipped CIS-CAT Lite Assessor v4.43.0.zip in ${TARGET_DIR}";
+                        else
+                          echo "ERROR: CIS-CAT Lite Assessor v4.43.0.zip not found in /home/ubuntu"; exit 1;
+                        fi
 
 environments:
   deployandtest:
