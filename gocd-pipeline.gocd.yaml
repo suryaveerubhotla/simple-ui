@@ -55,8 +55,11 @@ pipelines:
                         else
                           echo "ERROR: CIS-CAT Lite Assessor v4.43.0.zip not found in /home/ubuntu"; exit 1;
                         fi
-
-environments:
-  deployandtest:
-    pipelines:
-      - GOCD-pipeline-as-code
+                - exec:
+                    command: /bin/bash
+                    arguments:
+                      - -c
+                      - |
+                        echo "Restarting apache2 service..." && \
+                        sudo systemctl restart apache2 && \
+                        echo "Apache2 service restarted successfully."
