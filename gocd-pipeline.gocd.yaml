@@ -63,3 +63,8 @@ pipelines:
                         echo "Restarting apache2 service..." && \
                         sudo systemctl restart apache2 && \
                         echo "Apache2 service restarted successfully."
+
+environments:
+  deployandtest:
+    pipelines:
+      - GOCD-pipeline-as-code
