@@ -7,8 +7,12 @@ pipelines:
     display_order: -1
     environment_variables:
       ENVIRONMENT_NAME: deployandtest
-      TARGET_DIR: /home/ubuntu/GOCDpipelineascode
+      TARGET_DIR: /home/surya/prime-square
+      SERVER_IP: 172.16.7.113
+      AGENT_IP: 172.16.7.119
+      SSH_KEY_FILE: /home/ubuntu/.ssh/id_rsa 
       WORKSPACE: /var/lib/go-agent/pipelines/JarDeploymentPipeline
+      
     materials:
       git-c05074b:
         git: https://github.com/suryaveerubhotla/simple-ui.git
@@ -26,42 +30,26 @@ pipelines:
             run-commands:
               timeout: 0
               resources:
-                - ubuntu
+                - surya
               tasks:
                 - exec:
                     command: /bin/bash
                     arguments:
                       - -c
                       - |
-                        mkdir -p "${TARGET_DIR}" && \
-                        echo "Created directory: ${TARGET_DIR}" && \
-                        if [ -f "${WORKSPACE}/HelloWorld.jar" ]; then
-                          cp "${WORKSPACE}/HelloWorld.jar" "${TARGET_DIR}/" && \
-                          chmod 755 "${TARGET_DIR}/HelloWorld.jar" && \
-                          echo "JAR file has been successfully deployed to ${TARGET_DIR}";
-                        else
-                          echo "ERROR: HelloWorld.jar not found in ${WORKSPACE}"; exit 1;
-                        fi
+                        echo "Creating target directory on the agent..." && \
+                        ssh -i "${SSH_KEY_FILE}" ubuntu@${AGENT_IP} "mkdir -p ${TARGET_DIR}" && \
+                        echo "Copying HelloWorld.jar to the agent..." && \
+                        scp -i "${SSH_KEY_FILE}" /home/ubuntu/HelloWorld.jar ubuntu@${AGENT_IP}:${TARGET_DIR}/ && \
+                        echo "HelloWorld.jar copied successfully." && \
+                        ssh -i "${SSH_KEY_FILE}" ubuntu@${AGENT_IP} "chmod 755 ${TARGET_DIR}/HelloWorld.jar && echo 'File permissions set.'"
                 - exec:
                     command: /bin/bash
                     arguments:
                       - -c
                       - |
-                        if [ -f "/home/ubuntu/CIS-CAT Lite Assessor v4.43.0.zip" ]; then
-                          cp "/home/ubuntu/CIS-CAT Lite Assessor v4.43.0.zip" "${TARGET_DIR}/" && \
-                          echo "Copied CIS-CAT Lite Assessor v4.43.0.zip to ${TARGET_DIR}" && \
-                          unzip -o "${TARGET_DIR}/CIS-CAT Lite Assessor v4.43.0.zip" -d "${TARGET_DIR}" && \
-                          echo "Unzipped CIS-CAT Lite Assessor v4.43.0.zip in ${TARGET_DIR}";
-                        else
-                          echo "ERROR: CIS-CAT Lite Assessor v4.43.0.zip not found in /home/ubuntu"; exit 1;
-                        fi
-                - exec:
-                    command: /bin/bash
-                    arguments:
-                      - -c
-                      - |
-                        echo "Restarting apache2 service..." && \
-                        sudo systemctl restart apache2 && \
+                        echo "Restarting apache2 service on the agent..." && \
+                        ssh -i "${SSH_KEY_FILE}" ubuntu@${AGENT_IP} "sudo systemctl restart apache2" && \
                         echo "Apache2 service restarted successfully."
 
 environments:
