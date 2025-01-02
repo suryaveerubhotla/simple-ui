@@ -41,6 +41,12 @@ pipelines:
                     arguments:
                       - -c
                       - |
+                        echo "Exporting environment variables..."
+                        export BUILD_DIR=/home/ubuntu/builds
+                        export TARGET_DIR=/home/ubuntu/pprime-ssquare
+                        export ARCHIVE_DIR=/home/ubuntu/archive
+                        export TEMP_DIR=${ARCHIVE_DIR}/temp-extract
+                        
                         echo "Processing build..."
                         echo "BUILD_DIR=${BUILD_DIR}"
                         echo "TARGET_DIR=${TARGET_DIR}"
