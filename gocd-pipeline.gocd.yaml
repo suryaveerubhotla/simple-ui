@@ -36,49 +36,51 @@ pipelines:
                       - systemctl
                       - stop
                       - PrimeSquare.service
-                - exec:     
-                    command: /bin/bash    
+                - exec:
+                    command: /bin/bash
                     arguments:
                       - -c
                       - |
                         echo "Processing build..."
 
+                        if [ ! -d "${BUILD_DIR}" ]; then
+                          echo "Build directory ${BUILD_DIR} does not exist!"
+                          exit 1
+                        fi
+
                         LATEST_BUILD=$(ls -t ${BUILD_DIR}/*.zip 2>/dev/null | head -n 1)
 
-                        if [ -z "$LATEST_BUILD" ]; then
+                        if [ -z "${LATEST_BUILD}" ]; then
                           echo "No builds found in ${BUILD_DIR}!"
                           exit 1
                         fi
 
                         echo "Found latest build: ${LATEST_BUILD}"
 
-                        if [ ! -d "$TARGET_DIR" ]; then
+                        if [ ! -d "${TARGET_DIR}" ]; then
                           echo "Target directory ${TARGET_DIR} does not exist. Creating..."
-                          mkdir -p "$TARGET_DIR"
-                          echo "Extracting build to ${TARGET_DIR}..."
-                          unzip -o "$LATEST_BUILD" -d "$TARGET_DIR"
-                        else
-                          echo "Target directory ${TARGET_DIR} exists. Preparing to extract to temporary location..."
-                          mkdir -p "$TEMP_DIR"
-                          mkdir -p "$ARCHIVE_DIR"
-                          echo "Extracting build to temporary directory: ${TEMP_DIR}..."
-                          unzip -o "$LATEST_BUILD" -d "$TEMP_DIR"
-                          echo "Copying core-*.jar to ${TARGET_DIR}..."
-                          JAR_FILE=$(find "$TEMP_DIR" -type f -name "core-*.jar" | head -n 1)
-
-                          if [ -z "$JAR_FILE" ]; then
-                            echo "No core-*.jar file found in the extracted build!"
-                            exit 1
-                          fi
-
-                          echo "Found JAR file: $JAR_FILE"
-                          cp "$JAR_FILE" "$TARGET_DIR"
-                          echo "Cleaning up temporary directory..."
-                          rm -rf "$TEMP_DIR"
+                          mkdir -p "${TARGET_DIR}" || { echo "Failed to create ${TARGET_DIR}"; exit 1; }
                         fi
 
-                        echo "Build processing complete."
+                        echo "Preparing extraction..."
+                        mkdir -p "${TEMP_DIR}" "${ARCHIVE_DIR}" || { echo "Failed to create directories"; exit 1; }
 
+                        echo "Extracting build to temporary directory: ${TEMP_DIR}..."
+                        unzip -o "${LATEST_BUILD}" -d "${TEMP_DIR}" || { echo "Failed to unzip build"; exit 1; }
+
+                        echo "Copying core-*.jar to ${TARGET_DIR}..."
+                        JAR_FILE=$(find "${TEMP_DIR}" -type f -name "core-*.jar" | head -n 1)
+
+                        if [ -z "${JAR_FILE}" ]; then
+                          echo "No core-*.jar file found in the extracted build!"
+                          exit 1
+                        fi
+
+                        cp "${JAR_FILE}" "${TARGET_DIR}" || { echo "Failed to copy JAR file"; exit 1; }
+                        echo "Cleaning up temporary directory..."
+                        rm -rf "${TEMP_DIR}" || { echo "Failed to clean up"; exit 1; }
+
+                        echo "Build processing complete."
                 - exec:
                     command: sudo
                     arguments:
