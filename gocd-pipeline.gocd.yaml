@@ -1,3 +1,4 @@
+---
 format_version: 10
 pipelines:
   GOCD-pipeline-as-code:
@@ -5,14 +6,6 @@ pipelines:
     label_template: ${COUNT}
     lock_behavior: none
     display_order: -1
-    environment_variables:
-      ENVIRONMENT_NAME: deployandtest
-      TARGET_DIR: /home/surya/prime-square
-      SERVER_IP: 172.16.7.113
-      AGENT_IP: 172.16.7.119
-      SSH_KEY_FILE: /home/ubuntu/.ssh/id_rsa 
-      WORKSPACE: /var/lib/go-agent/pipelines/JarDeploymentPipeline
-      
     materials:
       git-c05074b:
         git: https://github.com/suryaveerubhotla/simple-ui.git
@@ -20,38 +13,79 @@ pipelines:
         auto_update: true
         branch: main
     stages:
-      - DeployAndTest:
+      - Deploy-and-test:
           fetch_materials: true
           keep_artifacts: false
           clean_workspace: false
           approval:
-            type: success
+            type: manual
+            allow_only_on_success: false
           jobs:
             run-commands:
               timeout: 0
-              resources:
-                - surya
+              variables:
+                BUILD_DIR: /home/ubuntu/builds
+                TARGET_DIR: /home/ubuntu/pprime-ssquare
+                ARCHIVE_DIR: /home/ubuntu/archive
+                SERVICE: PrimeSquare.service
+                TEMP_DIR: ${ARCHIVE_DIR}/temp-extract
               tasks:
                 - exec:
-                    command: /bin/bash
+                    command: sudo
+                    arguments:
+                      - systemctl
+                      - stop
+                      - PrimeSquare.service
+                - exec:     
+                    command: sudo /bin/bash    
                     arguments:
                       - -c
                       - |
-                        echo "Creating target directory on the agent..." && \
-                        ssh -i "${SSH_KEY_FILE}" ubuntu@${AGENT_IP} "mkdir -p ${TARGET_DIR}" && \
-                        echo "Copying HelloWorld.jar to the agent..." && \
-                        scp -i "${SSH_KEY_FILE}" /home/ubuntu/HelloWorld.jar ubuntu@${AGENT_IP}:${TARGET_DIR}/ && \
-                        echo "HelloWorld.jar copied successfully." && \
-                        ssh -i "${SSH_KEY_FILE}" ubuntu@${AGENT_IP} "chmod 755 ${TARGET_DIR}/HelloWorld.jar && echo 'File permissions set.'"
-                - exec:
-                    command: /bin/bash
-                    arguments:
-                      - -c
-                      - |
-                        echo "Restarting apache2 service on the agent..." && \
-                        ssh -i "${SSH_KEY_FILE}" ubuntu@${AGENT_IP} "sudo systemctl restart apache2" && \
-                        echo "Apache2 service restarted successfully."
+                        echo "Processing build..."
 
+                        LATEST_BUILD=$(ls -t ${BUILD_DIR}/*.zip 2>/dev/null | head -n 1)
+
+                        if [ -z "$LATEST_BUILD" ]; then
+                          echo "No builds found in ${BUILD_DIR}!"
+                          exit 1
+                        fi
+
+                        echo "Found latest build: ${LATEST_BUILD}"
+
+                        if [ ! -d "$TARGET_DIR" ]; then
+                          echo "Target directory ${TARGET_DIR} does not exist. Creating..."
+                          mkdir -p "$TARGET_DIR"
+                          echo "Extracting build to ${TARGET_DIR}..."
+                          unzip -o "$LATEST_BUILD" -d "$TARGET_DIR"
+                        else
+                          echo "Target directory ${TARGET_DIR} exists. Preparing to extract to temporary location..."
+                          mkdir -p "$TEMP_DIR"
+                          mkdir -p "$ARCHIVE_DIR"
+                          echo "Extracting build to temporary directory: ${TEMP_DIR}..."
+                          unzip -o "$LATEST_BUILD" -d "$TEMP_DIR"
+                          echo "Copying core-*.jar to ${TARGET_DIR}..."
+                          JAR_FILE=$(find "$TEMP_DIR" -type f -name "core-*.jar" | head -n 1)
+
+                          if [ -z "$JAR_FILE" ]; then
+                            echo "No core-*.jar file found in the extracted build!"
+                            exit 1
+                          fi
+
+                          echo "Found JAR file: $JAR_FILE"
+                          cp "$JAR_FILE" "$TARGET_DIR"
+                          echo "Cleaning up temporary directory..."
+                          rm -rf "$TEMP_DIR"
+                        fi
+
+                        echo "Build processing complete."
+
+                - exec:
+                    command: sudo
+                    arguments:
+                      - systemctl
+                      - restart
+                      - PrimeSquare.service
+              run_if: passed
 environments:
   deployandtest:
     pipelines:
