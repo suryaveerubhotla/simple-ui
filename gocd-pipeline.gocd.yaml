@@ -42,6 +42,10 @@ pipelines:
                       - -c
                       - |
                         echo "Processing build..."
+                        echo "BUILD_DIR=${BUILD_DIR}"
+                        echo "TARGET_DIR=${TARGET_DIR}"
+                        echo "ARCHIVE_DIR=${ARCHIVE_DIR}"
+                        echo "TEMP_DIR=${TEMP_DIR}"
 
                         if [ ! -d "${BUILD_DIR}" ]; then
                           echo "Build directory ${BUILD_DIR} does not exist!"
