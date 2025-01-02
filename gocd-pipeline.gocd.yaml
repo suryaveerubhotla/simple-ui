@@ -1,4 +1,3 @@
----
 format_version: 10
 pipelines:
   GOCD-pipeline-as-code:
@@ -25,10 +24,12 @@ pipelines:
               timeout: 0
               variables:
                 BUILD_DIR: /home/ubuntu/builds
-                TARGET_DIR: /home/ubuntu/pprime-ssquare
+                TARGET_DIR: /home/surya/prime-square
                 ARCHIVE_DIR: /home/ubuntu/archive
-                SERVICE: PrimeSquare.service
                 TEMP_DIR: ${ARCHIVE_DIR}/temp-extract
+                REMOTE_HOST: 172.16.7.119
+                REMOTE_USER: surya
+                SERVICE: PrimeSquare.service
               tasks:
                 - exec:
                     command: sudo
@@ -43,16 +44,13 @@ pipelines:
                       - |
                         echo "Exporting environment variables..."
                         export BUILD_DIR=/home/ubuntu/builds
-                        export TARGET_DIR=/home/ubuntu/pprime-ssquare
+                        export TARGET_DIR=/home/surya/prime-square
                         export ARCHIVE_DIR=/home/ubuntu/archive
                         export TEMP_DIR=${ARCHIVE_DIR}/temp-extract
-                        
-                        echo "Processing build..."
-                        echo "BUILD_DIR=${BUILD_DIR}"
-                        echo "TARGET_DIR=${TARGET_DIR}"
-                        echo "ARCHIVE_DIR=${ARCHIVE_DIR}"
-                        echo "TEMP_DIR=${TEMP_DIR}"
+                        export REMOTE_HOST=172.16.7.119
+                        export REMOTE_USER=surya
 
+                        echo "Processing build..."
                         if [ ! -d "${BUILD_DIR}" ]; then
                           echo "Build directory ${BUILD_DIR} does not exist!"
                           exit 1
@@ -67,18 +65,15 @@ pipelines:
 
                         echo "Found latest build: ${LATEST_BUILD}"
 
-                        if [ ! -d "${TARGET_DIR}" ]; then
-                          echo "Target directory ${TARGET_DIR} does not exist. Creating..."
-                          mkdir -p "${TARGET_DIR}" || { echo "Failed to create ${TARGET_DIR}"; exit 1; }
-                        fi
-
-                        echo "Preparing extraction..."
                         mkdir -p "${TEMP_DIR}" "${ARCHIVE_DIR}" || { echo "Failed to create directories"; exit 1; }
 
-                        echo "Extracting build to temporary directory: ${TEMP_DIR}..."
+                        echo "Extracting build to temporary directory..."
                         unzip -o "${LATEST_BUILD}" -d "${TEMP_DIR}" || { echo "Failed to unzip build"; exit 1; }
 
-                        echo "Copying core-*.jar to ${TARGET_DIR}..."
+                        echo "Preparing target directory on remote server..."
+                        ssh ${REMOTE_USER}@${REMOTE_HOST} "mkdir -p ${TARGET_DIR} || { echo 'Failed to create ${TARGET_DIR}'; exit 1; }"
+
+                        echo "Copying core-*.jar to target server..."
                         JAR_FILE=$(find "${TEMP_DIR}" -type f -name "core-*.jar" | head -n 1)
 
                         if [ -z "${JAR_FILE}" ]; then
@@ -86,14 +81,17 @@ pipelines:
                           exit 1
                         fi
 
-                        cp "${JAR_FILE}" "${TARGET_DIR}" || { echo "Failed to copy JAR file"; exit 1; }
+                        scp "${JAR_FILE}" ${REMOTE_USER}@${REMOTE_HOST}:${TARGET_DIR}/ || { echo "Failed to copy JAR file"; exit 1; }
+
                         echo "Cleaning up temporary directory..."
                         rm -rf "${TEMP_DIR}" || { echo "Failed to clean up"; exit 1; }
 
                         echo "Build processing complete."
                 - exec:
-                    command: sudo
+                    command: ssh
                     arguments:
+                      - surya@172.16.7.119
+                      - sudo
                       - systemctl
                       - restart
                       - PrimeSquare.service
