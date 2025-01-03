@@ -1,0 +1,65 @@
+format_version: 10
+pipelines:
+  frontend-deployment:
+    group: deployment-group
+    label_template: ${COUNT}
+    lock_behavior: none
+    display_order: 2
+    materials:
+      git-frontend:
+        git: https://github.com/suryaveerubhotla/frontend-repo.git
+        shallow_clone: false
+        auto_update: true
+        branch: main
+    stages:
+      - Deploy-Frontend:
+          fetch_materials: true
+          keep_artifacts: false
+          clean_workspace: false
+          approval:
+            type: manual
+          jobs:
+            run-commands:
+              timeout: 0
+              variables:
+                BUILD_DIR: /home/ubuntu/builds
+                UI_TARGET_DIR: /var/www/html
+                UI_ARCHIVE_DIR: /home/ubuntu/ui-archive
+                UI_TEMP_DIR: ${UI_ARCHIVE_DIR}/temp-extract
+              tasks:
+                - exec:
+                    command: /bin/bash
+                    arguments:
+                      - -c
+                      - |
+                        echo "Processing frontend (ps_ui)..."
+                        UI_ZIP=$(ls ${BUILD_DIR}/ps_ui*.zip 2>/dev/null | head -n 1)
+
+                        if [ -z "${UI_ZIP}" ]; then
+                          echo "No ps_ui zip file found in ${BUILD_DIR}!"
+                          exit 1
+                        fi
+
+                        echo "Found frontend zip: ${UI_ZIP}"
+
+                        mkdir -p "${UI_TEMP_DIR}" "${UI_ARCHIVE_DIR}" || { echo "Failed to create UI directories"; exit 1; }
+                        unzip -o "${UI_ZIP}" -d "${UI_TEMP_DIR}" || { echo "Failed to unzip ps_ui"; exit 1; }
+
+                        echo "Granting temporary permissions to ${UI_TARGET_DIR}..."
+                        sudo chmod -R 777 "${UI_TARGET_DIR}" || { echo "Failed to grant permissions"; exit 1; }
+
+                        echo "Replacing files in ${UI_TARGET_DIR}..."
+                        sudo mkdir -p "${UI_TARGET_DIR}" || { echo "Failed to create ${UI_TARGET_DIR}"; exit 1; }
+                        sudo rm -rf "${UI_TARGET_DIR}"/* || { echo "Failed to clean ${UI_TARGET_DIR}"; exit 1; }
+                        sudo cp -r "${UI_TEMP_DIR}"/* "${UI_TARGET_DIR}" || { echo "Failed to copy UI files"; exit 1; }
+                        sudo chown -R www-data:www-data "${UI_TARGET_DIR}" || { echo "Failed to set ownership for UI files"; exit 1; }
+
+                        echo "Reverting permissions of ${UI_TARGET_DIR}..."
+                        sudo chmod -R 755 "${UI_TARGET_DIR}" || { echo "Failed to revert permissions"; exit 1; }
+
+                        rm -rf "${UI_TEMP_DIR}" || { echo "Failed to clean up UI temp dir"; exit 1; }
+
+                        echo "Restarting Apache2..."
+                        sudo systemctl restart apache2 || { echo "Failed to restart Apache2"; exit 1; }
+
+                        echo "Frontend deployment complete."
