@@ -67,7 +67,5 @@ pipelines:
               
 environments:
   Frontandbackend:
-    environment_variables:
-      BUILD_DIR: /home/ubuntu/builds
     pipelines:
       - frontend-deployment
