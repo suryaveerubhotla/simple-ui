@@ -13,13 +13,59 @@ pipelines:
         branch: main
     stages:
       - Deploy-Backend:
+          fetch_materials: true
+          keep_artifacts: false
+          clean_workspace: false
+          approval:
+            type: manual
           jobs:
             run-commands:
+              timeout: 0
+              variables:
+                BUILD_DIR: /home/ubuntu/builds
+                BE_TARGET_DIR: /home/ubuntu/prime
+                BE_ARCHIVE_DIR: /home/ubuntu/archive
+                BE_TEMP_DIR: ${BE_ARCHIVE_DIR}/temp-extract
+                SERVICE: PrimeSquare.service
               tasks:
                 - exec:
-                    command: echo
+                    command: /bin/bash
                     arguments:
-                      - "Deploying backend..."
+                      - -c
+                      - |
+                        echo "Processing backend (ps_be)..."
+                        BE_ZIP=$(ls ${BUILD_DIR}/ps_be*.zip 2>/dev/null | head -n 1)
+
+                        if [ -z "${BE_ZIP}" ]; then
+                          echo "No ps_be zip file found in ${BUILD_DIR}!"
+                          exit 1
+                        fi
+
+                        echo "Found backend zip: ${BE_ZIP}"
+
+                        mkdir -p "${BE_TEMP_DIR}" "${BE_ARCHIVE_DIR}" || { echo "Failed to create backend directories"; exit 1; }
+                        unzip -o "${BE_ZIP}" -d "${BE_TEMP_DIR}" || { echo "Failed to unzip ps_be"; exit 1; }
+
+                        JAR_FILE=$(find "${BE_TEMP_DIR}" -type f -name "core-*.jar" | head -n 1)
+
+                        if [ -z "${JAR_FILE}" ]; then
+                          echo "No core-*.jar file found in the ps_be zip!"
+                          exit 1
+                        fi
+
+                        echo "Replacing jar in ${BE_TARGET_DIR}..."
+                        mkdir -p "${BE_TARGET_DIR}" || { echo "Failed to create ${BE_TARGET_DIR}"; exit 1; }
+                        cp "${JAR_FILE}" "${BE_TARGET_DIR}" || { echo "Failed to copy JAR file"; exit 1; }
+                        rm -rf "${BE_TEMP_DIR}" || { echo "Failed to clean up BE temp dir"; exit 1; }
+
+                        echo "Restarting backend service..."
+                        sudo systemctl restart ${SERVICE} || { echo "Failed to restart ${SERVICE}"; exit 1; }
+
+                        echo "Backend deployment complete."
+              resources:
+                - ubuntu
+            environment_variables:
+              GOCD_ENVIRONMENT: Frontandbackend
 environments:
   Frontandbackend:
     pipelines:
