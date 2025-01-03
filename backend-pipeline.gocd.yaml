@@ -20,7 +20,8 @@ pipelines:
             type: manual
           jobs:
             run-commands:
-              timeout: 0
+             environment_variables:
+              BUILD_DIR: /home/ubuntu/builds
               variables:
                 BUILD_DIR: /home/ubuntu/builds
                 BE_TARGET_DIR: /home/ubuntu/prime
