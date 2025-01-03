@@ -62,3 +62,7 @@ pipelines:
                         sudo systemctl restart ${SERVICE} || { echo "Failed to restart ${SERVICE}"; exit 1; }
 
                         echo "Backend deployment complete."
+environments:
+  Frontandbackend:
+    pipelines:
+      - backend-deployment

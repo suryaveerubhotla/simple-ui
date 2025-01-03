@@ -7,7 +7,7 @@ pipelines:
     display_order: 2
     materials:
       git-frontend:
-        git: https://github.com/suryaveerubhotla/frontend-repo.git
+        git: https://github.com/suryaveerubhotla/simple-ui.git
         shallow_clone: false
         auto_update: true
         branch: main
@@ -63,3 +63,7 @@ pipelines:
                         sudo systemctl restart apache2 || { echo "Failed to restart Apache2"; exit 1; }
 
                         echo "Frontend deployment complete."
+environments:
+  Frontandbackend:
+    pipelines:
+      - frontend-deployment
