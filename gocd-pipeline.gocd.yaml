@@ -1,4 +1,3 @@
----
 format_version: 10
 pipelines:
   GOCD-pipeline-as-code:
@@ -25,17 +24,14 @@ pipelines:
               timeout: 0
               variables:
                 BUILD_DIR: /home/ubuntu/builds
-                TARGET_DIR: /home/ubuntu/prime
-                ARCHIVE_DIR: /home/ubuntu/archive
+                BE_TARGET_DIR: /home/ubuntu/prime
+                UI_TARGET_DIR: /var/www/html
+                BE_ARCHIVE_DIR: /home/ubuntu/archive
+                UI_ARCHIVE_DIR: /home/ubuntu/ui-archive
                 SERVICE: PrimeSquare.service
-                TEMP_DIR: ${ARCHIVE_DIR}/temp-extract
+                BE_TEMP_DIR: ${BE_ARCHIVE_DIR}/temp-extract
+                UI_TEMP_DIR: ${UI_ARCHIVE_DIR}/temp-extract
               tasks:
-                - exec:
-                    command: sudo
-                    arguments:
-                      - systemctl
-                      - stop
-                      - PrimeSquare.service
                 - exec:
                     command: /bin/bash
                     arguments:
@@ -43,60 +39,65 @@ pipelines:
                       - |
                         echo "Exporting environment variables..."
                         export BUILD_DIR=/home/ubuntu/builds
-                        export TARGET_DIR=/home/ubuntu/prime
-                        export ARCHIVE_DIR=/home/ubuntu/archive
-                        export TEMP_DIR=${ARCHIVE_DIR}/temp-extract
-                        
-                        echo "Processing build..."
-                        echo "BUILD_DIR=${BUILD_DIR}"
-                        echo "TARGET_DIR=${TARGET_DIR}"
-                        echo "ARCHIVE_DIR=${ARCHIVE_DIR}"
-                        echo "TEMP_DIR=${TEMP_DIR}"
+                        export BE_TARGET_DIR=/home/ubuntu/prime
+                        export UI_TARGET_DIR=/var/www/html
+                        export BE_ARCHIVE_DIR=/home/ubuntu/archive
+                        export UI_ARCHIVE_DIR=/home/ubuntu/ui-archive
+                        export BE_TEMP_DIR=${BE_ARCHIVE_DIR}/temp-extract
+                        export UI_TEMP_DIR=${UI_ARCHIVE_DIR}/temp-extract
+                        export SERVICE=PrimeSquare.service
 
-                        if [ ! -d "${BUILD_DIR}" ]; then
-                          echo "Build directory ${BUILD_DIR} does not exist!"
+                        echo "Processing backend (ps_be)..."
+                        BE_ZIP=$(ls ${BUILD_DIR}/ps_be*.zip 2>/dev/null | head -n 1)
+
+                        if [ -z "${BE_ZIP}" ]; then
+                          echo "No ps_be zip file found in ${BUILD_DIR}!"
                           exit 1
                         fi
 
-                        LATEST_BUILD=$(ls -t ${BUILD_DIR}/*.zip 2>/dev/null | head -n 1)
+                        echo "Found backend zip: ${BE_ZIP}"
 
-                        if [ -z "${LATEST_BUILD}" ]; then
-                          echo "No builds found in ${BUILD_DIR}!"
-                          exit 1
-                        fi
+                        mkdir -p "${BE_TEMP_DIR}" "${BE_ARCHIVE_DIR}" || { echo "Failed to create backend directories"; exit 1; }
+                        unzip -o "${BE_ZIP}" -d "${BE_TEMP_DIR}" || { echo "Failed to unzip ps_be"; exit 1; }
 
-                        echo "Found latest build: ${LATEST_BUILD}"
-
-                        if [ ! -d "${TARGET_DIR}" ]; then
-                          echo "Target directory ${TARGET_DIR} does not exist. Creating..."
-                          mkdir -p "${TARGET_DIR}" || { echo "Failed to create ${TARGET_DIR}"; exit 1; }
-                        fi
-
-                        echo "Preparing extraction..."
-                        mkdir -p "${TEMP_DIR}" "${ARCHIVE_DIR}" || { echo "Failed to create directories"; exit 1; }
-
-                        echo "Extracting build to temporary directory: ${TEMP_DIR}..."
-                        unzip -o "${LATEST_BUILD}" -d "${TEMP_DIR}" || { echo "Failed to unzip build"; exit 1; }
-
-                        echo "Copying core-*.jar to ${TARGET_DIR}..."
-                        JAR_FILE=$(find "${TEMP_DIR}" -type f -name "core-*.jar" | head -n 1)
+                        JAR_FILE=$(find "${BE_TEMP_DIR}" -type f -name "core-*.jar" | head -n 1)
 
                         if [ -z "${JAR_FILE}" ]; then
-                          echo "No core-*.jar file found in the extracted build!"
+                          echo "No core-*.jar file found in the ps_be zip!"
                           exit 1
                         fi
 
-                        cp "${JAR_FILE}" "${TARGET_DIR}" || { echo "Failed to copy JAR file"; exit 1; }
-                        echo "Cleaning up temporary directory..."
-                        rm -rf "${TEMP_DIR}" || { echo "Failed to clean up"; exit 1; }
+                        echo "Replacing jar in ${BE_TARGET_DIR}..."
+                        mkdir -p "${BE_TARGET_DIR}" || { echo "Failed to create ${BE_TARGET_DIR}"; exit 1; }
+                        cp "${JAR_FILE}" "${BE_TARGET_DIR}" || { echo "Failed to copy JAR file"; exit 1; }
+                        rm -rf "${BE_TEMP_DIR}" || { echo "Failed to clean up BE temp dir"; exit 1; }
 
-                        echo "Build processing complete."
-                - exec:
-                    command: sudo
-                    arguments:
-                      - systemctl
-                      - restart
-                      - PrimeSquare.service
+                        echo "Processing frontend (ps_ui)..."
+                        UI_ZIP=$(ls ${BUILD_DIR}/ps_ui*.zip 2>/dev/null | head -n 1)
+
+                        if [ -z "${UI_ZIP}" ]; then
+                          echo "No ps_ui zip file found in ${BUILD_DIR}!"
+                          exit 1
+                        fi
+
+                        echo "Found frontend zip: ${UI_ZIP}"
+
+                        mkdir -p "${UI_TEMP_DIR}" "${UI_ARCHIVE_DIR}" || { echo "Failed to create UI directories"; exit 1; }
+                        unzip -o "${UI_ZIP}" -d "${UI_TEMP_DIR}" || { echo "Failed to unzip ps_ui"; exit 1; }
+
+                        echo "Replacing files in ${UI_TARGET_DIR}..."
+                        mkdir -p "${UI_TARGET_DIR}" || { echo "Failed to create ${UI_TARGET_DIR}"; exit 1; }
+                        rm -rf "${UI_TARGET_DIR}"/* || { echo "Failed to clean ${UI_TARGET_DIR}"; exit 1; }
+                        cp -r "${UI_TEMP_DIR}"/* "${UI_TARGET_DIR}" || { echo "Failed to copy UI files"; exit 1; }
+                        rm -rf "${UI_TEMP_DIR}" || { echo "Failed to clean up UI temp dir"; exit 1; }
+
+                        echo "Restarting backend service..."
+                        sudo systemctl restart ${SERVICE} || { echo "Failed to restart ${SERVICE}"; exit 1; }
+
+                        echo "Restarting Apache2..."
+                        sudo systemctl restart apache2 || { echo "Failed to restart Apache2"; exit 1; }
+
+                        echo "Deployment complete."
               run_if: passed
 environments:
   deployandtest:
