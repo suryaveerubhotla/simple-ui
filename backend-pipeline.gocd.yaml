@@ -20,6 +20,8 @@ pipelines:
             type: manual
           jobs:
             run-commands:
+              environment_variables:
+                BUILD_DIR: /home/ubuntu/builds
               variables:
                 BUILD_DIR: /home/ubuntu/builds
                 BE_TARGET_DIR: /home/ubuntu/prime
@@ -64,5 +66,7 @@ pipelines:
         
 environments:
   Frontandbackend:
+    environment_variables:
+      BUILD_DIR: /home/ubuntu/builds 
     pipelines:
       - backend-deployment
