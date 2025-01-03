@@ -63,10 +63,7 @@ pipelines:
                         sudo systemctl restart apache2 || { echo "Failed to restart Apache2"; exit 1; }
 
                         echo "frontend deployment complete."
-              resources:
-                - ubuntu
-            environment_variables:
-              GOCD_ENVIRONMENT: Frontandbackend
+              
 environments:
   Frontandbackend:
     pipelines:
