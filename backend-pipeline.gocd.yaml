@@ -33,10 +33,19 @@ pipelines:
                     arguments:
                       - -c
                       - |
+                        echo "Exporting environment variables..."
+                        export BUILD_DIR=/home/ubuntu/builds
+                        export BE_TARGET_DIR=/home/ubuntu/prime
+                        export UI_TARGET_DIR=/var/www/html
+                        export BE_ARCHIVE_DIR=/home/ubuntu/archive
+                        export UI_ARCHIVE_DIR=/home/ubuntu/ui-archive
+                        export BE_TEMP_DIR=${BE_ARCHIVE_DIR}/temp-extract
+                        export UI_TEMP_DIR=${UI_ARCHIVE_DIR}/temp-extract
+                        export SERVICE=PrimeSquare.service
                         echo "Checking build directory contents..."
                         ls -lh ${BUILD_DIR}
                         echo "Processing backend (ps_be)..."
-                        BE_ZIP=$(ls ${BUILD_DIR}/ps_be_1.1.25_idfc_1.1.12-9dfdf54-296.zip 2>/dev/null | head -n 1)
+                        BE_ZIP=$(ls ${BUILD_DIR}/ps_be.zip 2>/dev/null | head -n 1)
 
                         if [ -z "${BE_ZIP}" ]; then
                           echo "No ps_be zip file found in ${BUILD_DIR}!"
