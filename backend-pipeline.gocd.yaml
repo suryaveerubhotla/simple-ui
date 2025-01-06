@@ -7,7 +7,7 @@ pipelines:
     display_order: 1
     materials:
       git-backend:
-        git: https://github.com/suryaveerubhotla/simple-ui.git
+        git: https://github.com/suryaveerubhotla/backend-repo.git
         shallow_clone: false
         auto_update: true
         branch: main
@@ -20,6 +20,7 @@ pipelines:
             type: manual
           jobs:
             run-commands:
+              timeout: 0
               variables:
                 BUILD_DIR: /home/ubuntu/builds
                 BE_TARGET_DIR: /home/ubuntu/prime
@@ -27,32 +28,45 @@ pipelines:
                 BE_TEMP_DIR: ${BE_ARCHIVE_DIR}/temp-extract
                 SERVICE: PrimeSquare.service
               tasks:
-                - script: |
-                    #!/bin/bash
-                    set -e
+                - exec:
+                    command: /bin/bash
+                    arguments:
+                      - -c
+                      - |
+                        echo "Processing backend (ps_be)..."
+                        BE_ZIP=$(ls ${BUILD_DIR}/ps_be*.zip 2>/dev/null | head -n 1)
 
-                    mkdir -p "${BE_ARCHIVE_DIR}"
-                    mkdir -p "${BE_TEMP_DIR}"
-                    mkdir -p "${BE_TARGET_DIR}"
+                        if [ -z "${BE_ZIP}" ]; then
+                          echo "No ps_be zip file found in ${BUILD_DIR}!"
+                          exit 1
+                        fi
 
-                    BE_FILE=$(ls -t "${BUILD_DIR}"/*.be.*.tar.gz 2>/dev/null | head -n 1)
+                        echo "Found backend zip: ${BE_ZIP}"
 
-                    if [ -z "$BE_FILE" ]; then
-                      echo "No BE build file found in ${BUILD_DIR}"
-                      exit 1
-                    fi
+                        mkdir -p "${BE_TEMP_DIR}" "${BE_ARCHIVE_DIR}" || { echo "Failed to create backend directories"; exit 1; }
+                        unzip -o "${BE_ZIP}" -d "${BE_TEMP_DIR}" || { echo "Failed to unzip ps_be"; exit 1; }
 
-                    tar -xzf "$BE_FILE" -C "${BE_TEMP_DIR}"
+                        JAR_FILE=$(find "${BE_TEMP_DIR}" -type f -name "core-*.jar" | head -n 1)
 
-                    rsync -a --delete "${BE_TEMP_DIR}/" "${BE_TARGET_DIR}/"
+                        if [ -z "${JAR_FILE}" ]; then
+                          echo "No core-*.jar file found in the ps_be zip!"
+                          exit 1
+                        fi
 
-                    chmod -R 755 "${BE_TARGET_DIR}"
+                        echo "Replacing jar in ${BE_TARGET_DIR}..."
+                        mkdir -p "${BE_TARGET_DIR}" || { echo "Failed to create ${BE_TARGET_DIR}"; exit 1; }
+                        cp "${JAR_FILE}" "${BE_TARGET_DIR}" || { echo "Failed to copy JAR file"; exit 1; }
+                        rm -rf "${BE_TEMP_DIR}" || { echo "Failed to clean up BE temp dir"; exit 1; }
 
-                    systemctl restart "${SERVICE}"
+                        echo "Restarting backend service..."
+                        sudo systemctl restart ${SERVICE} || { echo "Failed to restart ${SERVICE}"; exit 1; }
 
-                    echo "Backend deployed successfully and service restarted"
-
+                        echo "Backend deployment complete."
+              resources:
+                - ubuntu
+            environment_variables:
+              GOCD_ENVIRONMENT: Frontandbackend
 environments:
-  Frontandbackend: 
+  Frontandbackend:
     pipelines:
       - backend-deployment
