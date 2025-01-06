@@ -30,32 +30,26 @@ pipelines:
                 - script: |
                     #!/bin/bash
                     set -e
-                    
-                    
-                    mkdir -p ${BE_ARCHIVE_DIR}
-                    mkdir -p ${BE_TEMP_DIR}
-                    mkdir -p ${BE_TARGET_DIR}
-                    
-                   
-                    BE_FILE=$(ls -t ${BUILD_DIR}/*.be.*.tar.gz 2>/dev/null | head -n 1)
-                    
+
+                    mkdir -p "${BE_ARCHIVE_DIR}"
+                    mkdir -p "${BE_TEMP_DIR}"
+                    mkdir -p "${BE_TARGET_DIR}"
+
+                    BE_FILE=$(ls -t "${BUILD_DIR}"/*.be.*.tar.gz 2>/dev/null | head -n 1)
+
                     if [ -z "$BE_FILE" ]; then
                       echo "No BE build file found in ${BUILD_DIR}"
                       exit 1
                     fi
-                    
-               
-                    tar -xzf $BE_FILE -C ${BE_TEMP_DIR}
-                    
-                    
-                    rsync -a --delete ${BE_TEMP_DIR}/ ${BE_TARGET_DIR}/
-                    
-                    
-                    chmod -R 755 ${BE_TARGET_DIR}
-                    
-                    
-                    systemctl restart ${SERVICE}
-                    
+
+                    tar -xzf "$BE_FILE" -C "${BE_TEMP_DIR}"
+
+                    rsync -a --delete "${BE_TEMP_DIR}/" "${BE_TARGET_DIR}/"
+
+                    chmod -R 755 "${BE_TARGET_DIR}"
+
+                    systemctl restart "${SERVICE}"
+
                     echo "Backend deployed successfully and service restarted"
 
 environments:

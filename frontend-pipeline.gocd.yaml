@@ -29,29 +29,24 @@ pipelines:
                 - script: |
                     #!/bin/bash
                     set -e
-                    
-                    
-                    mkdir -p ${UI_ARCHIVE_DIR}
-                    mkdir -p ${UI_TEMP_DIR}
-                    mkdir -p ${UI_TARGET_DIR}
-                    
-                   
-                    UI_FILE=$(ls -t ${BUILD_DIR}/*.ui.*.tar.gz 2>/dev/null | head -n 1)
-                    
+
+                    mkdir -p "${UI_ARCHIVE_DIR}"
+                    mkdir -p "${UI_TEMP_DIR}"
+                    mkdir -p "${UI_TARGET_DIR}"
+
+                    UI_FILE=$(ls -t "${BUILD_DIR}"/*.ui.*.tar.gz 2>/dev/null | head -n 1)
+
                     if [ -z "$UI_FILE" ]; then
                       echo "No UI build file found in ${BUILD_DIR}"
                       exit 1
                     fi
-                    
-                   
-                    tar -xzf $UI_FILE -C ${UI_TEMP_DIR}
-                    
-                    
-                    rsync -a --delete ${UI_TEMP_DIR}/ ${UI_TARGET_DIR}/
-                    
-                    
-                    chmod -R 755 ${UI_TARGET_DIR}
-                    
+
+                    tar -xzf "$UI_FILE" -C "${UI_TEMP_DIR}"
+
+                    rsync -a --delete "${UI_TEMP_DIR}/" "${UI_TARGET_DIR}/"
+
+                    chmod -R 755 "${UI_TARGET_DIR}"
+
                     echo "Frontend deployed successfully to ${UI_TARGET_DIR}"
              
 environments:
