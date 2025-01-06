@@ -33,7 +33,7 @@ pipelines:
                       - -c
                       - |
                         echo "Processing frontend (ps_ui)..."
-                        UI_ZIP=$(ls ${BUILD_DIR}/ps_ui*.zip 2>/dev/null | head -n 1)
+                        UI_ZIP=$(ls ${BUILD_DIR}/ps_ui_*.zip 2>/dev/null | head -n 1)
 
                         if [ -z "${UI_ZIP}" ]; then
                           echo "No ps_ui zip file found in ${BUILD_DIR}!"

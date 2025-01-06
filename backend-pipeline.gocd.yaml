@@ -36,7 +36,7 @@ pipelines:
                         echo "Checking build directory contents..."
                         ls -lh ${BUILD_DIR}
                         echo "Processing backend (ps_be)..."
-                        BE_ZIP=$(ls ${BUILD_DIR}/ps_be*.zip 2>/dev/null | head -n 1)
+                        BE_ZIP=$(ls ${BUILD_DIR}/ps_be_*.zip 2>/dev/null | head -n 1)
 
                         if [ -z "${BE_ZIP}" ]; then
                           echo "No ps_be zip file found in ${BUILD_DIR}!"
