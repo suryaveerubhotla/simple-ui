@@ -7,7 +7,7 @@ pipelines:
     display_order: 1
     materials:
       git-backend:
-        git: https://github.com/suryaveerubhotla/backend-repo.git
+        git: https://github.com/suryaveerubhotla/simple-ui.git
         shallow_clone: false
         auto_update: true
         branch: main
