@@ -12,7 +12,7 @@ pipelines:
         auto_update: true
         branch: main
     stages:
-      - Deploy-Backend:
+      - Deploy:
           fetch_materials: true
           keep_artifacts: false
           clean_workspace: false
@@ -26,6 +26,9 @@ pipelines:
                 BE_TARGET_DIR: /home/ubuntu/prime
                 BE_ARCHIVE_DIR: /home/ubuntu/archive
                 SERVICE: PrimeSquare.service
+                DB_SCRIPTS_DIR: /home/ubuntu/prime/database-scripts
+                DB_USER: psdbadmin
+                DB_PASS: 6%EOm@Te1sb19Th6
               tasks:
                 - exec:
                     command: /bin/bash
@@ -65,27 +68,6 @@ pipelines:
                         echo "Checking service status..."
                         sudo systemctl status ${SERVICE}
 
-                        echo "Backend deployment complete."
-
-      - Deploy-Database:
-          fetch_materials: true
-          keep_artifacts: false
-          clean_workspace: false
-          approval:
-            type: manual
-          jobs:
-            run-db-scripts:
-              timeout: 0
-              variables:
-                DB_SCRIPTS_DIR: /home/ubuntu/prime/database-scripts
-                DB_USER: psdbadmin
-                DB_PASS: 6%EOm@Te1sb19Th6
-              tasks:
-                - exec:
-                    command: /bin/bash
-                    arguments:
-                      - -c
-                      - |
                         echo "Executing database scripts..."
                         mysql < "${DB_SCRIPTS_DIR}/ddl_drop_schema_script.sql" -u ${DB_USER} -p${DB_PASS} || { echo "Failed to execute ddl_drop_schema_script.sql"; exit 1; }
                         mysql < "${DB_SCRIPTS_DIR}/primesquare_workflow_ddl_dml.sql" -u ${DB_USER} -p${DB_PASS} || { echo "Failed to execute primesquare_workflow_ddl_dml.sql"; exit 1; }
@@ -93,7 +75,7 @@ pipelines:
                         mysql < "${DB_SCRIPTS_DIR}/dml_insert_scripts.sql" -u ${DB_USER} -p${DB_PASS} || { echo "Failed to execute dml_insert_scripts.sql"; exit 1; }
                         mysql < "${DB_SCRIPTS_DIR}/PS_Index.sql" -u ${DB_USER} -p${DB_PASS} || { echo "Failed to execute PS_Index.sql"; exit 1; }
 
-                        echo "Database deployment complete."
+                        echo "Deployment complete."
               resources:
                 - ubuntu
               environment_variables:
