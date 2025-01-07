@@ -52,6 +52,9 @@ pipelines:
                         fi
                         unzip -o "${BE_ZIP}" -d "${BE_TARGET_DIR}" || { echo "Failed to unzip ps_be"; exit 1; }
 
+                        echo "Changing permissions to ubuntu:ubuntu..."
+                        sudo chown -R ubuntu:ubuntu "${BE_TARGET_DIR}" || { echo "Failed to change ownership"; exit 1; }
+
                         echo "Copying service file..."
                         sudo cp "${BE_TARGET_DIR}/service/PrimeSquare.service" /etc/systemd/system/ || { echo "Failed to copy service file"; exit 1; }
 
