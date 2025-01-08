@@ -65,7 +65,7 @@ pipelines:
                         
                         
                         mkdir -p "${BE_TARGET_DIR}" || { echo "Failed to create ${BE_TARGET_DIR}"; exit 1; }
-                        unzip -o "${BUILD_DIR}/ps_be*.zip" -d "${BE_TARGET_DIR}" || { echo "Failed to unzip ps_be"; exit 1; }
+                        unzip -o "${BUILD_DIR}/" -d "${BE_TARGET_DIR}" || { echo "Failed to unzip ps_be"; exit 1; }
 
                         echo "Changing permissions to ubuntu:ubuntu..."
                         sudo chown -R ubuntu:ubuntu "${BE_TARGET_DIR}" || { echo "Failed to change ownership"; exit 1; }
