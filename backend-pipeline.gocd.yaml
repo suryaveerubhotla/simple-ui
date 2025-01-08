@@ -40,9 +40,9 @@ pipelines:
                         export BE_TARGET_DIR=/home/ubuntu/prime-square
                         export BE_ARCHIVE_DIR=/home/ubuntu/archive
                         export SERVICE=PrimeSquare.service
-                        export DB_SCRIPTS_DIR: /home/ubuntu/prime-square/database-scripts
-                        export DB_USER: psdbadmin
-                        export DB_PASS: 6%EOm@Te1sb19Th6
+                        export DB_SCRIPTS_DIR=/home/ubuntu/prime-square/database-scripts
+                        export DB_USER=psdbadmin
+                        export DB_PASS=6%EOm@Te1sb19Th6
 
                         echo "Creating target directory..."
                         mkdir -p "${BE_TARGET_DIR}" || { echo "Failed to create ${BE_TARGET_DIR}"; exit 1; }
