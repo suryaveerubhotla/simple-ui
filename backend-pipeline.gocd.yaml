@@ -29,9 +29,8 @@ pipelines:
                 DB_SCRIPTS_DIR: /home/ubuntu/prime-square/database-scripts
                 DB_USER: psdbadmin
                 DB_PASS: 6%EOm@Te1sb19Th6
-                SFTP_HOST: 172.16.7.110
-                SFTP_USER: sftp_gocd
-                SFTP_PASSWORD: 1234
+                SFTP_HOST: 172.16.7.116
+                SFTP_USER: surya
                 SFTP_UPLOADS_DIR: uploads
               tasks:
                 - exec:
@@ -41,16 +40,15 @@ pipelines:
                       - |
                         echo "Accessing SFTP machine to fetch the backend zip file..."
                         export BUILD_DIR=/home/ubuntu/builds
-                        export SFTP_HOST=172.16.7.110
-                        export SFTP_USER=sftp_gocd
-                        export SFTP_PASSWORD=1234
+                        export SFTP_HOST=172.16.7.116
+                        export SFTP_USER=surya
                         export SFTP_UPLOADS_DIR=uploads
 
                         echo "Creating build directory..."
                         mkdir -p "${BUILD_DIR}" || { echo "Failed to create ${BUILD_DIR}"; exit 1; }
 
                         echo "Downloading backend zip file from SFTP..."
-                        sshpass -p "${SFTP_PASSWORD}" sftp ${SFTP_USER}@${SFTP_HOST} <<EOF
+                        sftp -o StrictHostKeyChecking=no -i "${SFTP_KEY}" ${SFTP_USER}@${SFTP_HOST} <<EOF
                         cd ${SFTP_UPLOADS_DIR}
                         get ps_be*.zip ${BUILD_DIR}/ps_be*.zip
                         bye
