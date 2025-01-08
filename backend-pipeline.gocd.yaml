@@ -64,13 +64,6 @@ pipelines:
                         echo "Reloading systemd daemon..."
                         sudo systemctl daemon-reload || { echo "Failed to reload systemd daemon"; exit 1; }
 
-                        echo "Enabling and starting service..."
-                        sudo systemctl enable ${SERVICE} || { echo "Failed to enable ${SERVICE}"; exit 1; }
-                        sudo systemctl start ${SERVICE} || { echo "Failed to start ${SERVICE}"; exit 1; }
-
-                        echo "Checking service status..."
-                        sudo systemctl status ${SERVICE}
-
                         echo "Executing database scripts..."
                         mysql < "${DB_SCRIPTS_DIR}/ddl_drop_schema_script.sql" -u ${DB_USER} -p${DB_PASS} || { echo "Failed to execute ddl_drop_schema_script.sql"; exit 1; }
                         mysql < "${DB_SCRIPTS_DIR}/primesquare_workflow_ddl_dml.sql" -u ${DB_USER} -p${DB_PASS} || { echo "Failed to execute primesquare_workflow_ddl_dml.sql"; exit 1; }
@@ -79,6 +72,13 @@ pipelines:
                         mysql < "${DB_SCRIPTS_DIR}/PS_Index.sql" -u ${DB_USER} -p${DB_PASS} || { echo "Failed to execute PS_Index.sql"; exit 1; }
 
                         echo "Deployment complete."
+                        
+                        echo "Enabling and starting service..."
+                        sudo systemctl enable ${SERVICE} || { echo "Failed to enable ${SERVICE}"; exit 1; }
+                        sudo systemctl start ${SERVICE} || { echo "Failed to start ${SERVICE}"; exit 1; }
+
+                        echo "Checking service status..."
+                        sudo systemctl status ${SERVICE}
               resources:
                 - ubuntu
               environment_variables:
