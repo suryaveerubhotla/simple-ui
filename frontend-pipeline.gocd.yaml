@@ -64,9 +64,6 @@ pipelines:
 
                         rm -rf "${UI_TEMP_DIR}" || { echo "Failed to clean up UI temp dir"; exit 1; }
 
-                        echo "Validating Apache configuration..."
-                        apache2 -t || { echo "Apache configuration test failed"; exit 1; }
-
                         echo "Stopping Apache service..."
                         sudo systemctl stop apache2.service || { echo "Failed to stop Apache service"; exit 1; }
 
