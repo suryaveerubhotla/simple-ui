@@ -59,7 +59,7 @@ pipelines:
                         fi
                         
                         echo "Unzipping backend artifacts..."
-                        unzip -o "${BUILD_DIR}/backend.zip" -d "${BUILD_DIR}" || { echo "Failed to unzip backend.zip"; exit 1; }
+                        unzip -o "${BUILD_DIR}/ps_be*.zip" -d "${BUILD_DIR}" || { echo "Failed to unzip ps_be*.zip"; exit 1; }
 
                         echo "Continuing with deployment steps..."
                         
