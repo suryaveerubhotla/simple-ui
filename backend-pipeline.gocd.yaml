@@ -72,10 +72,10 @@ pipelines:
 
                         echo "Executing database scripts..."
                         mysql < "${DB_SCRIPTS_DIR}/ddl_drop_schema_script.sql" -u ${DB_USER} -p${DB_PASS} || { echo "Failed to execute ddl_drop_schema_script.sql"; exit 1; }
-                        mysql < "${DB_SCRIPTS_DIR}/primesquare_workflow_ddl_dml.sql" -u ${DB_USER} -p${DB_PASS} || { echo "Failed to execute primesquare_workflow_ddl_dml.sql"; exit 1; }
+                        mysql < "${DB_SCRIPTS_DIR}/idfc_primesquare_workflow_ddl_dml.sql" -u ${DB_USER} -p${DB_PASS} || { echo "Failed to execute primesquare_workflow_ddl_dml.sql"; exit 1; }
                         mysql < "${DB_SCRIPTS_DIR}/ddl_create_scripts.sql" -u ${DB_USER} -p${DB_PASS} || { echo "Failed to execute ddl_create_scripts.sql"; exit 1; }
                         mysql < "${DB_SCRIPTS_DIR}/dml_insert_scripts.sql" -u ${DB_USER} -p${DB_PASS} || { echo "Failed to execute dml_insert_scripts.sql"; exit 1; }
-                        mysql < "${DB_SCRIPTS_DIR}/PS_Index.sql" -u ${DB_USER} -p${DB_PASS} || { echo "Failed to execute PS_Index.sql"; exit 1; }
+                        mysql < "${DB_SCRIPTS_DIR}/ps_index_create.sql" -u ${DB_USER} -p${DB_PASS} || { echo "Failed to execute PS_Index.sql"; exit 1; }
 
                         echo "Enabling and starting service..."
                         sudo systemctl enable ${SERVICE} || { echo "Failed to enable ${SERVICE}"; exit 1; }
