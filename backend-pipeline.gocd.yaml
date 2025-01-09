@@ -94,12 +94,12 @@ pipelines:
                         fi
 
                         echo "Copying and unzipping the backend artifacts to BE_TARGET_DIR..."
-                        cp "${BUILD_DIR}/backend.zip" "${BE_TARGET_DIR}/" || { echo "Failed to copy zip file"; exit 1; }
-                        unzip -o "${BE_TARGET_DIR}/backend.zip" -d "${BE_TARGET_DIR}" || { echo "Failed to unzip backend.zip"; exit 1; }
+                        sudo cp "${BUILD_DIR}/backend.zip" "${BE_TARGET_DIR}/" || { echo "Failed to copy zip file"; exit 1; }
+                        sudo unzip -o "${BE_TARGET_DIR}/backend.zip" -d "${BE_TARGET_DIR}" || { echo "Failed to unzip backend.zip"; exit 1; }
 
                         echo "Removing the zip file from BUILD_DIR and BE_TARGET_DIR..."
-                        rm -f "${BUILD_DIR}/backend.zip"
-                        rm -f "${BE_TARGET_DIR}/backend.zip"
+                        sudo rm -f "${BUILD_DIR}/backend.zip"
+                        sudo rm -f "${BE_TARGET_DIR}/backend.zip"
 
                         echo "Listing extracted files in BE_TARGET_DIR..."
                         ls -l "${BE_TARGET_DIR}"
