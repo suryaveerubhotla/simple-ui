@@ -31,6 +31,7 @@ pipelines:
                 SFTP_HOST: 172.16.7.116
                 SFTP_USER: surya
                 SFTP_UPLOADS_DIR: uploads
+                DROP_DB: YES  # Set this to YES or NO to control DB script execution
               tasks:
                 - exec:
                     command: /bin/bash
@@ -48,7 +49,8 @@ pipelines:
                         export SFTP_USER=surya
                         export SFTP_KEY=/var/go/.ssh/id_rsa
                         export SFTP_UPLOADS_DIR=uploads
-                        
+                        export DROP_DB=${DROP_DB}
+
                         echo "Checking if service ${SERVICE} exists..."
                         if [ -f /etc/systemd/system/${SERVICE} ]; then
                           echo "${SERVICE} exists. Checking service status..."
@@ -72,11 +74,11 @@ pipelines:
                         fi
 
                         echo "Checking for existing ps_be_*.zip files in BUILD_DIR..."
-                         if ls "${BUILD_DIR}/ps_be_*.zip" > /dev/null 2>&1; then
+                        if ls "${BUILD_DIR}/ps_be_*.zip" > /dev/null 2>&1; then
                           echo "Found existing ps_be_*.zip files. Removing them..."
                           sudo rm -f "${BUILD_DIR}/ps_be_*.zip" || { echo "Failed to remove existing zip files"; exit 1; }
                         else
-                        echo "No existing ps_be_*.zip files found. Proceeding..."
+                          echo "No existing ps_be_*.zip files found. Proceeding..."
                         fi
 
                         echo "Accessing SFTP machine to fetch the backend zip file..."
@@ -119,9 +121,8 @@ pipelines:
                         if [ ! -f /etc/systemd/system/${SERVICE} ]; then
                           sudo cp "${BE_TARGET_DIR}/service/${SERVICE}" /etc/systemd/system/ || { echo "Failed to copy service file"; exit 1; }
 
-                        echo "Enabling the service..."
+                          echo "Enabling the service..."
                           sudo systemctl enable ${SERVICE} || { echo "Failed to enable ${SERVICE}"; exit 1; }
-
                         else
                           echo "Service file already exists. Skipping copy."
                         fi
@@ -132,19 +133,22 @@ pipelines:
                         echo "Reloading systemd daemon..."
                         sudo systemctl daemon-reload || { echo "Failed to reload systemd daemon"; exit 1; }
 
-                        echo "Giving execute permissions to database scripts..."
-                        sudo chmod -R +x "${DB_SCRIPTS_DIR}" || { echo "Failed to give execute permissions to database scripts"; exit 1; }
+                        if [ "${DROP_DB}" = "YES" ]; then
+                          echo "Executing database scripts as DROP_DB is set to YES..."
+                          sudo chmod -R +x "${DB_SCRIPTS_DIR}" || { echo "Failed to give execute permissions to database scripts"; exit 1; }
 
-                        echo "Executing database scripts..."
-                        mysql < "${DB_SCRIPTS_DIR}/ddl_drop_schema_script.sql" -u ${DB_USER} -p${DB_PASS} || { echo "Failed to execute ddl_drop_schema_script.sql"; exit 1; }
-                        mysql < "${DB_SCRIPTS_DIR}/idfc_primesquare_workflow_ddl_dml.sql" -u ${DB_USER} -p${DB_PASS} || { echo "Failed to execute primesquare_workflow_ddl_dml.sql"; exit 1; }
-                        mysql < "${DB_SCRIPTS_DIR}/ddl_create_scripts.sql" -u ${DB_USER} -p${DB_PASS} || { echo "Failed to execute ddl_create_scripts.sql"; exit 1; }
-                        mysql < "${DB_SCRIPTS_DIR}/dml_insert_scripts.sql" -u ${DB_USER} -p${DB_PASS} || { echo "Failed to execute dml_insert_scripts.sql"; exit 1; }
-                        mysql < "${DB_SCRIPTS_DIR}/ps_index_create.sql" -u ${DB_USER} -p${DB_PASS} || { echo "Failed to execute ps_index_create.sql"; exit 1; }
+                          mysql < "${DB_SCRIPTS_DIR}/ddl_drop_schema_script.sql" -u ${DB_USER} -p${DB_PASS} || { echo "Failed to execute ddl_drop_schema_script.sql"; exit 1; }
+                          mysql < "${DB_SCRIPTS_DIR}/idfc_primesquare_workflow_ddl_dml.sql" -u ${DB_USER} -p${DB_PASS} || { echo "Failed to execute primesquare_workflow_ddl_dml.sql"; exit 1; }
+                          mysql < "${DB_SCRIPTS_DIR}/ddl_create_scripts.sql" -u ${DB_USER} -p${DB_PASS} || { echo "Failed to execute ddl_create_scripts.sql"; exit 1; }
+                          mysql < "${DB_SCRIPTS_DIR}/dml_insert_scripts.sql" -u ${DB_USER} -p${DB_PASS} || { echo "Failed to execute dml_insert_scripts.sql"; exit 1; }
+                          mysql < "${DB_SCRIPTS_DIR}/ps_index_create.sql" -u ${DB_USER} -p${DB_PASS} || { echo "Failed to execute ps_index_create.sql"; exit 1; }
+                        else
+                          echo "Skipping database scripts execution as DROP_DB is set to NO."
+                        fi
 
-                        echo "starting service..."
+                        echo "Starting service..."
                         sudo systemctl start ${SERVICE} || { echo "Failed to start ${SERVICE}"; exit 1; }
-                        sudo systemctl status ${SERVICE} 
+                        sudo systemctl status ${SERVICE}
 
                         echo "Deployment complete."
               resources:
