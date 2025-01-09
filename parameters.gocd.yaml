@@ -31,7 +31,7 @@ pipelines:
                 SFTP_HOST: 172.16.7.116
                 SFTP_USER: surya
                 SFTP_UPLOADS_DIR: uploads
-                DROP_DB: YES  # Set this to YES or NO to control DB script execution
+                DROP_DB: YES 
               tasks:
                 - exec:
                     command: /bin/bash
