@@ -63,6 +63,14 @@ pipelines:
                           echo "${SERVICE} does not exist. Proceeding..."
                         fi
 
+                        echo "Checking for existing ps_be_*.zip files in BUILD_DIR..."
+                         if ls "${BUILD_DIR}/ps_be_*.zip" > /dev/null 2>&1; then
+                          echo "Found existing ps_be_*.zip files. Removing them..."
+                          sudo rm -f "${BUILD_DIR}/ps_be_*.zip" || { echo "Failed to remove existing zip files"; exit 1; }
+                        else
+                        echo "No existing ps_be_*.zip files found. Proceeding..."
+                        fi
+
                         echo "Checking and creating BUILD_DIR if needed..."
                         if [ ! -d "${BUILD_DIR}" ]; then
                           echo "BUILD_DIR does not exist. Creating ${BUILD_DIR}..."
@@ -77,7 +85,7 @@ pipelines:
                         echo "Accessing SFTP machine to fetch the backend zip file..."
                         sftp -o StrictHostKeyChecking=no -i /var/go/.ssh/id_rsa ${SFTP_USER}@${SFTP_HOST} <<EOF
                         cd ${SFTP_UPLOADS_DIR}
-                        get ps_be*.zip ${BUILD_DIR}/backend.zip
+                        get ps_be_*.zip ${BUILD_DIR}/ps_be_*.zip
                         bye
                         EOF
                         if [ $? -ne 0 ]; then
@@ -94,12 +102,11 @@ pipelines:
                         fi
 
                         echo "Copying and unzipping the backend artifacts to BE_TARGET_DIR..."
-                        sudo cp "${BUILD_DIR}/backend.zip" "${BE_TARGET_DIR}/" || { echo "Failed to copy zip file"; exit 1; }
-                        sudo unzip -o "${BE_TARGET_DIR}/backend.zip" -d "${BE_TARGET_DIR}" || { echo "Failed to unzip backend.zip"; exit 1; }
+                        sudo cp "${BUILD_DIR}/ps_be_*.zip" "${BE_TARGET_DIR}/" || { echo "Failed to copy zip file"; exit 1; }
+                        sudo unzip -o "${BE_TARGET_DIR}/ps_be_*.zip" -d "${BE_TARGET_DIR}" || { echo "Failed to unzip backend.zip"; exit 1; }
 
-                        echo "Removing the zip file from BUILD_DIR and BE_TARGET_DIR..."
-                        sudo rm -f "${BUILD_DIR}/backend.zip"
-                        sudo rm -f "${BE_TARGET_DIR}/backend.zip"
+                        echo "Removing the zip file from BE_TARGET_DIR..."
+                        sudo rm -f "${BE_TARGET_DIR}/ps_be_*.zip"
 
                         echo "Listing extracted files in BE_TARGET_DIR..."
                         ls -l "${BE_TARGET_DIR}"
@@ -110,6 +117,10 @@ pipelines:
                         echo "Checking and copying service file if needed..."
                         if [ ! -f /etc/systemd/system/${SERVICE} ]; then
                           sudo cp "${BE_TARGET_DIR}/service/${SERVICE}" /etc/systemd/system/ || { echo "Failed to copy service file"; exit 1; }
+
+                        echo "Enabling the service..."
+                          sudo systemctl enable ${SERVICE} || { echo "Failed to enable ${SERVICE}"; exit 1; }
+
                         else
                           echo "Service file already exists. Skipping copy."
                         fi
@@ -130,8 +141,7 @@ pipelines:
                         mysql < "${DB_SCRIPTS_DIR}/dml_insert_scripts.sql" -u ${DB_USER} -p${DB_PASS} || { echo "Failed to execute dml_insert_scripts.sql"; exit 1; }
                         mysql < "${DB_SCRIPTS_DIR}/ps_index_create.sql" -u ${DB_USER} -p${DB_PASS} || { echo "Failed to execute ps_index_create.sql"; exit 1; }
 
-                        echo "Enabling and starting service..."
-                        sudo systemctl enable ${SERVICE} || { echo "Failed to enable ${SERVICE}"; exit 1; }
+                        echo "starting service..."
                         sudo systemctl start ${SERVICE} || { echo "Failed to start ${SERVICE}"; exit 1; }
 
                         echo "Deployment complete."
