@@ -24,7 +24,6 @@ pipelines:
               variables:
                 BUILD_DIR: /home/ubuntu/builds
                 BE_TARGET_DIR: /home/ubuntu/prime-square
-                BE_ARCHIVE_DIR: /home/ubuntu/archive
                 SERVICE: PrimeSquare.service
                 DB_SCRIPTS_DIR: /home/ubuntu/prime-square/database-scripts
                 DB_USER: psdbadmin
@@ -38,46 +37,47 @@ pipelines:
                     arguments:
                       - -c
                       - |
+                        echo "Checking if BUILD_DIR exists..."
+                        if [ ! -d "${BUILD_DIR}" ]; then
+                          echo "BUILD_DIR does not exist. Creating it..."
+                          mkdir -p "${BUILD_DIR}" || { echo "Failed to create ${BUILD_DIR}"; exit 1; }
+                        else
+                          echo "BUILD_DIR exists. Proceeding..."
+                        fi
+
                         echo "Accessing SFTP machine to fetch the backend zip file..."
-                        export BUILD_DIR=/home/ubuntu/builds
-                        export BE_TARGET_DIR=/home/ubuntu/prime-square
-                        export BE_ARCHIVE_DIR=/home/ubuntu/archive
-                        export SERVICE=PrimeSquare.service
-                        export DB_SCRIPTS_DIR=/home/ubuntu/prime-square/database-scripts
-                        export DB_USER=psdbadmin
-                        export DB_PASS=6%EOm@Te1sb19Th6
-                        export SFTP_HOST=172.16.7.116
-                        export SFTP_USER=surya
-                        export SFTP_KEY=/var/go/.ssh/id_rsa
-                        export SFTP_UPLOADS_DIR=uploads
-                        
-
-                        echo "Creating build directory..."
-                        mkdir -p "${BUILD_DIR}" || { echo "Failed to create ${BUILD_DIR}"; exit 1; }
-
-                        echo "Downloading backend zip file from SFTP..."
-                        sftp -o StrictHostKeyChecking=no -i "${SFTP_KEY}" ${SFTP_USER}@${SFTP_HOST} <<EOF
+                        sftp -o StrictHostKeyChecking=no -i /var/go/.ssh/id_rsa ${SFTP_USER}@${SFTP_HOST} <<EOF
                         cd ${SFTP_UPLOADS_DIR}
-                        get ps_be*.zip ${BUILD_DIR}/ps_be_backend.zip
+                        get ps_be*.zip ${BUILD_DIR}/backend.zip
                         bye
                         EOF
                         if [ $? -ne 0 ]; then
-                          echo "Failed to fetch ps_be_backend.zip from SFTP."
+                          echo "Failed to fetch backend.zip from SFTP."
                           exit 1
                         fi
-                        
-                        echo "Unzipping backend artifacts..."
-                        unzip -o "${BUILD_DIR}/ps_be_backend.zip" -d "${BUILD_DIR}" || { echo "Failed to unzip ps_be_backend.zip"; exit 1; }
 
-                        echo "Continuing with deployment steps..."
+                        echo "Unzipping backend artifacts to BE_TARGET_DIR..."
                         mkdir -p "${BE_TARGET_DIR}" || { echo "Failed to create ${BE_TARGET_DIR}"; exit 1; }
-                        unzip -o "${BUILD_DIR}/ps_be_backend.zip" -d "${BE_TARGET_DIR}" || { echo "Failed to unzip ps_be_backend.zip"; exit 1; }
+                        unzip -o "${BUILD_DIR}/backend.zip" -d "${BE_TARGET_DIR}" || { echo "Failed to unzip backend.zip"; exit 1; }
+
+                        echo "Verifying extracted files..."
+                        EXPECTED_FILES="application.properties core-1.1.26_IDFC_1.1.13.jar database-scripts encrypt.sh jasypt primesquare_bundle.p12 service wrapper.sh"
+                        for file in ${EXPECTED_FILES}; do
+                          if [ ! -e "${BE_TARGET_DIR}/${file}" ]; then
+                            echo "Missing file: ${file}"
+                            exit 1
+                          fi
+                        done
 
                         echo "Changing permissions to ubuntu:ubuntu..."
                         sudo chown -R ubuntu:ubuntu "${BE_TARGET_DIR}" || { echo "Failed to change ownership"; exit 1; }
 
-                        echo "Copying service file..."
-                        sudo cp "${BE_TARGET_DIR}/service/PrimeSquare.service" /etc/systemd/system/ || { echo "Failed to copy service file"; exit 1; }
+                        echo "Checking and copying service file if needed..."
+                        if [ ! -f /etc/systemd/system/${SERVICE} ]; then
+                          sudo cp "${BE_TARGET_DIR}/service/${SERVICE}" /etc/systemd/system/ || { echo "Failed to copy service file"; exit 1; }
+                        else
+                          echo "Service file already exists. Skipping copy."
+                        fi
 
                         echo "Making wrapper.sh executable..."
                         sudo chmod +x "${BE_TARGET_DIR}/wrapper.sh" || { echo "Failed to make wrapper.sh executable"; exit 1; }
@@ -93,14 +93,18 @@ pipelines:
                         mysql < "${DB_SCRIPTS_DIR}/idfc_primesquare_workflow_ddl_dml.sql" -u ${DB_USER} -p${DB_PASS} || { echo "Failed to execute primesquare_workflow_ddl_dml.sql"; exit 1; }
                         mysql < "${DB_SCRIPTS_DIR}/ddl_create_scripts.sql" -u ${DB_USER} -p${DB_PASS} || { echo "Failed to execute ddl_create_scripts.sql"; exit 1; }
                         mysql < "${DB_SCRIPTS_DIR}/dml_insert_scripts.sql" -u ${DB_USER} -p${DB_PASS} || { echo "Failed to execute dml_insert_scripts.sql"; exit 1; }
-                        mysql < "${DB_SCRIPTS_DIR}/ps_index_create.sql" -u ${DB_USER} -p${DB_PASS} || { echo "Failed to execute PS_Index.sql"; exit 1; }
+                        mysql < "${DB_SCRIPTS_DIR}/ps_index_create.sql" -u ${DB_USER} -p${DB_PASS} || { echo "Failed to execute ps_index_create.sql"; exit 1; }
+
+                        echo "Checking service status..."
+                        sudo systemctl status ${SERVICE} > /dev/null 2>&1
+                        if [ $? -eq 0 ]; then
+                          echo "Service is already running. Stopping the service..."
+                          sudo systemctl stop ${SERVICE} || { echo "Failed to stop the service"; exit 1; }
+                        fi
 
                         echo "Enabling and starting service..."
                         sudo systemctl enable ${SERVICE} || { echo "Failed to enable ${SERVICE}"; exit 1; }
                         sudo systemctl start ${SERVICE} || { echo "Failed to start ${SERVICE}"; exit 1; }
-
-                        echo "Checking service status..."
-                        sudo systemctl status ${SERVICE}
 
                         echo "Deployment complete."
               resources:
