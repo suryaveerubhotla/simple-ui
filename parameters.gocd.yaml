@@ -10,8 +10,8 @@ pipelines:
         shallow_clone: false
         auto_update: true
         branch: main
-      parameters:
-      DROP_DB: Yes/No
+    parameters:
+        DROP_DB: Yes/No
     stages:
       - Deploy:
           fetch_materials: true
