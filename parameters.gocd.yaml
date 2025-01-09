@@ -1,7 +1,7 @@
 format_version: 10
 pipelines:
   parameters:
-    DROP_DB: YES
+    DROP_DB:
     group: deployment-group
     label_template: ${COUNT}
     lock_behavior: none
@@ -134,7 +134,7 @@ pipelines:
                         echo "Reloading systemd daemon..."
                         sudo systemctl daemon-reload || { echo "Failed to reload systemd daemon"; exit 1; }
 
-                        if [ "${DROP_DB}" = "YES" ]; then
+                        if [ "${DROP_DB}" == "YES" ]; then
                           echo "Executing database scripts as DROP_DB is set to YES..."
                           sudo chmod -R +x "${DB_SCRIPTS_DIR}" || { echo "Failed to give execute permissions to database scripts"; exit 1; }
 
