@@ -144,6 +144,7 @@ pipelines:
 
                         echo "starting service..."
                         sudo systemctl start ${SERVICE} || { echo "Failed to start ${SERVICE}"; exit 1; }
+                        sudo systemctl status ${SERVICE} 
 
                         echo "Deployment complete."
               resources:
