@@ -1,7 +1,5 @@
 format_version: 10
 pipelines:
-  parameters:
-    DROP_DB:
     group: deployment-group
     label_template: ${COUNT}
     lock_behavior: none
@@ -12,6 +10,8 @@ pipelines:
         shallow_clone: false
         auto_update: true
         branch: main
+    parameters:
+      DROP_DB: Yes/No
     stages:
       - Deploy:
           fetch_materials: true
