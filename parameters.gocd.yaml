@@ -10,8 +10,6 @@ pipelines:
         shallow_clone: false
         auto_update: true
         branch: main
-    parameters:
-        DROP_DB: Yes/No
     stages:
       - Deploy:
           fetch_materials: true
@@ -156,7 +154,8 @@ pipelines:
                 - ubuntu
               environment_variables:
                 GOCD_ENVIRONMENT: Frontandbackend
-
+    parameters:
+      DROP_DB: Yes/No
 environments:
   Frontandbackend:
     pipelines:
