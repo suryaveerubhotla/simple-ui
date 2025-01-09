@@ -37,25 +37,17 @@ pipelines:
                     arguments:
                       - -c
                       - |
-                        export BUILD_DIR=/home/ubuntu/builds
-                        export BE_TARGET_DIR=/home/ubuntu/prime-square
-                        export SERVICE=PrimeSquare.service
-                        export DB_SCRIPTS_DIR=/home/ubuntu/prime-square/database-scripts
-                        export DB_USER=psdbadmin
-                        export DB_PASS=6%EOm@Te1sb19Th6
-                        export SFTP_HOST=172.16.7.116
-                        export SFTP_USER=surya
-                        export SFTP_KEY=/var/go/.ssh/id_rsa
-                        export SFTP_UPLOADS_DIR=uploads
-                        echo "Checking if BUILD_DIR exists..."
+                        echo "Accessing SFTP machine to fetch the backend zip file..."
+
+                        # Check and create BUILD_DIR if it doesn't exist
                         if [ ! -d "${BUILD_DIR}" ]; then
-                          echo "BUILD_DIR does not exist. Creating it..."
+                          echo "BUILD_DIR does not exist. Creating ${BUILD_DIR}..."
                           mkdir -p "${BUILD_DIR}" || { echo "Failed to create ${BUILD_DIR}"; exit 1; }
                         else
-                          echo "BUILD_DIR exists. Proceeding..."
+                          echo "BUILD_DIR exists. Using existing ${BUILD_DIR}..."
                         fi
 
-                        echo "Accessing SFTP machine to fetch the backend zip file..."
+                        # Fetch the zip file from the SFTP server
                         sftp -o StrictHostKeyChecking=no -i /var/go/.ssh/id_rsa ${SFTP_USER}@${SFTP_HOST} <<EOF
                         cd ${SFTP_UPLOADS_DIR}
                         get ps_be*.zip ${BUILD_DIR}/backend.zip
@@ -66,9 +58,20 @@ pipelines:
                           exit 1
                         fi
 
-                        echo "Unzipping backend artifacts to BE_TARGET_DIR..."
-                        mkdir -p "${BE_TARGET_DIR}" || { echo "Failed to create ${BE_TARGET_DIR}"; exit 1; }
-                        unzip -o "${BUILD_DIR}/backend.zip" -d "${BE_TARGET_DIR}" || { echo "Failed to unzip backend.zip"; exit 1; }
+                        # Check and create BE_TARGET_DIR if it doesn't exist
+                        if [ ! -d "${BE_TARGET_DIR}" ]; then
+                          echo "BE_TARGET_DIR does not exist. Creating ${BE_TARGET_DIR}..."
+                          mkdir -p "${BE_TARGET_DIR}" || { echo "Failed to create ${BE_TARGET_DIR}"; exit 1; }
+                        else
+                          echo "BE_TARGET_DIR exists. Using existing ${BE_TARGET_DIR}..."
+                        fi
+
+                        # Copy the zip file to BE_TARGET_DIR and unzip
+                        echo "Copying zip file to BE_TARGET_DIR..."
+                        cp "${BUILD_DIR}/backend.zip" "${BE_TARGET_DIR}/" || { echo "Failed to copy zip file"; exit 1; }
+
+                        echo "Unzipping backend artifacts in BE_TARGET_DIR..."
+                        unzip -o "${BE_TARGET_DIR}/backend.zip" -d "${BE_TARGET_DIR}" || { echo "Failed to unzip backend.zip"; exit 1; }
 
                         echo "Verifying extracted files..."
                         EXPECTED_FILES="application.properties core-1.1.26_IDFC_1.1.13.jar database-scripts encrypt.sh jasypt primesquare_bundle.p12 service wrapper.sh"
@@ -79,7 +82,7 @@ pipelines:
                           fi
                         done
 
-                        echo "Changing permissions to ubuntu:ubuntu..."
+                        echo "Changing permissions to ubuntu:ubuntu for BE_TARGET_DIR..."
                         sudo chown -R ubuntu:ubuntu "${BE_TARGET_DIR}" || { echo "Failed to change ownership"; exit 1; }
 
                         echo "Checking and copying service file if needed..."
