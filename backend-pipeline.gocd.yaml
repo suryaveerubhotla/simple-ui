@@ -79,9 +79,6 @@ pipelines:
                           echo "BUILD_DIR exists. Using existing ${BUILD_DIR}..."
                         fi
 
-                        echo "Changing permissions of BUILD_DIR to ubuntu:ubuntu..."
-                        sudo chown -R ubuntu:ubuntu "${BUILD_DIR}" || { echo "Failed to change permissions of BUILD_DIR"; exit 1; }
-
                         echo "Accessing SFTP machine to fetch the backend zip file..."
                         sftp -o StrictHostKeyChecking=no -i /var/go/.ssh/id_rsa ${SFTP_USER}@${SFTP_HOST} <<EOF
                         cd ${SFTP_UPLOADS_DIR}
