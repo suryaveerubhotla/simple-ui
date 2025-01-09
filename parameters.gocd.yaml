@@ -1,6 +1,7 @@
 format_version: 10
 pipelines:
   parameters:
+    DROP_DB: YES
     group: deployment-group
     label_template: ${COUNT}
     lock_behavior: none
