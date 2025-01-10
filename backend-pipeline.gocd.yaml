@@ -32,6 +32,7 @@ pipelines:
                         else
                           echo "Fresh Deployment"
                           export DEPLOY_TYPE=fresh
+                        fi
               environment_variables:
                 DEPLOY_TYPE: ""
 
@@ -51,6 +52,8 @@ pipelines:
                         export BUILD_DIR=/home/ubuntu/builds
                         if [ ! -d "${BUILD_DIR}" ]; then
                           mkdir -p "${BUILD_DIR}" || { echo "Failed to create BUILD_DIR"; exit 1; }
+                          sudo chown -R $(whoami):$(whoami) "${BUILD_DIR}"
+                          sudo chmod -R 755 "${BUILD_DIR}"
                         fi
 
                         echo "Checking for existing ps_be_*.zip files..."
