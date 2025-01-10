@@ -16,7 +16,7 @@ pipelines:
           fetch_materials: true
           clean_workspace: false
           approval:
-            type: manual
+            type: auto
           jobs:
             check-dir:
               tasks:
@@ -40,7 +40,7 @@ pipelines:
           fetch_materials: false
           clean_workspace: false
           approval:
-            type: manual
+            type: auto
           jobs:
             prepare-build:
               tasks:
@@ -52,6 +52,8 @@ pipelines:
                         export BUILD_DIR=/home/ubuntu/builds
                         if [ ! -d "${BUILD_DIR}" ]; then
                           mkdir -p "${BUILD_DIR}" || { echo "Failed to create BUILD_DIR"; exit 1; }
+                          sudo chown -R $(whoami):$(whoami) "${BUILD_DIR}"
+                          sudo chmod -R 755 "${BUILD_DIR}"
                         fi
 
                         echo "Checking for existing ps_be_*.zip files..."
@@ -74,7 +76,7 @@ pipelines:
           fetch_materials: false
           clean_workspace: false
           approval:
-            type: manual
+            type: auto
           jobs:
             deploy:
               tasks:
@@ -91,26 +93,53 @@ pipelines:
                         export BUILD_DIR=/home/ubuntu/builds
 
                         if [ "$DEPLOY_TYPE" = "fresh" ]; then
-                          echo "Performing Fresh Deployment..."
+                          export BE_TARGET_DIR=/home/ubuntu/prime-square
+                          export SERVICE=PrimeSquare.service
+
+                          echo "Creating BE_TARGET_DIR..."
                           mkdir -p "${BE_TARGET_DIR}"
-                          sudo chown -R ubuntu:ubuntu "${BE_TARGET_DIR}"
+                          sudo chown -R go:go "${BE_TARGET_DIR}"  # Ensure go-agent has correct permissions
+
+                          echo "Unzipping backend artifacts..."
                           unzip -o "${BUILD_DIR}/ps_be_*.zip" -d "${BE_TARGET_DIR}"
 
+                          echo "Setting up service..."
                           if [ ! -f /etc/systemd/system/${SERVICE} ]; then
                             sudo cp "${BE_TARGET_DIR}/service/${SERVICE}" /etc/systemd/system/
                             sudo systemctl enable ${SERVICE}
                           fi
 
+                          echo "Starting service..."
                           sudo systemctl daemon-reload
                           sudo systemctl start ${SERVICE}
                           sudo systemctl status ${SERVICE}
-                        else
-                          echo "Performing Non-Fresh Deployment..."
+                        fi
+
+            deploy-non-fresh:
+              tasks:
+                - exec:
+                    command: /bin/bash
+                    arguments:
+                      - -c
+                      - |
+                        if [ "$DEPLOY_TYPE" = "non-fresh" ]; then
+                          export BE_TARGET_DIR=/home/ubuntu/prime-square
+                          export BE_ARCHIVE_DIR=/home/ubuntu/archive
+                          export BACKUPS=/home/ubuntu/backups
+                          export SERVICE=PrimeSquare.service
+
+                          echo "Stopping service..."
                           sudo systemctl stop ${SERVICE}
+
+                          echo "Backing up existing JAR files..."
                           mkdir -p "${BACKUPS}"
-                          find "${BE_TARGET_DIR}" -name "*.jar" -exec mv {} "${BACKUPS}/" \;
+                          mv "${BE_TARGET_DIR}/*.jar" "${BACKUPS}/"
+
+                          echo "Extracting new artifacts..."
                           unzip -o "${BUILD_DIR}/ps_be_*.zip" -d "${BE_ARCHIVE_DIR}"
-                          find "${BE_ARCHIVE_DIR}" -name "*.jar" -exec cp {} "${BE_TARGET_DIR}/" \;
+                          find "${BE_ARCHIVE_DIR}" -name "*.jar" -exec cp {} "${BE_TARGET_DIR}" \;
+
+                          echo "Starting service..."
                           sudo systemctl start ${SERVICE}
                           sudo systemctl status ${SERVICE}
                         fi
@@ -119,7 +148,7 @@ pipelines:
           fetch_materials: false
           clean_workspace: false
           approval:
-            type: manual
+            type: auto
           jobs:
             db-scripts:
               tasks:
