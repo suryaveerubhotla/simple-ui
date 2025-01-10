@@ -21,6 +21,16 @@ pipelines:
           jobs:
             run-commands:
               timeout: 0
+              variables:
+                BUILD_DIR: /home/ubuntu/builds
+                BE_TARGET_DIR: /home/ubuntu/prime-square
+                SERVICE: PrimeSquare.service
+                DB_SCRIPTS_DIR: /home/ubuntu/prime-square/database-scripts
+                DB_USER: psdbadmin
+                DB_PASS: 6%EOm@Te1sb19Th6
+                SFTP_HOST: 172.16.7.116
+                SFTP_USER: surya
+                SFTP_UPLOADS_DIR: uploads
               tasks:
                 - exec:
                     command: /bin/bash
