@@ -32,7 +32,6 @@ pipelines:
                         else
                           echo "Fresh Deployment"
                           export DEPLOY_TYPE=fresh
-                        fi
               environment_variables:
                 DEPLOY_TYPE: ""
 
@@ -52,8 +51,6 @@ pipelines:
                         export BUILD_DIR=/home/ubuntu/builds
                         if [ ! -d "${BUILD_DIR}" ]; then
                           mkdir -p "${BUILD_DIR}" || { echo "Failed to create BUILD_DIR"; exit 1; }
-                          sudo chown -R $(whoami):$(whoami) "${BUILD_DIR}"
-                          sudo chmod -R 755 "${BUILD_DIR}"
                         fi
 
                         echo "Checking for existing ps_be_*.zip files..."
@@ -93,53 +90,26 @@ pipelines:
                         export BUILD_DIR=/home/ubuntu/builds
 
                         if [ "$DEPLOY_TYPE" = "fresh" ]; then
-                          export BE_TARGET_DIR=/home/ubuntu/prime-square
-                          export SERVICE=PrimeSquare.service
-
-                          echo "Creating BE_TARGET_DIR..."
+                          echo "Performing Fresh Deployment..."
                           mkdir -p "${BE_TARGET_DIR}"
-                          sudo chown -R go:go "${BE_TARGET_DIR}"  # Ensure go-agent has correct permissions
-
-                          echo "Unzipping backend artifacts..."
+                          sudo chown -R ubuntu:ubuntu "${BE_TARGET_DIR}"
                           unzip -o "${BUILD_DIR}/ps_be_*.zip" -d "${BE_TARGET_DIR}"
 
-                          echo "Setting up service..."
                           if [ ! -f /etc/systemd/system/${SERVICE} ]; then
                             sudo cp "${BE_TARGET_DIR}/service/${SERVICE}" /etc/systemd/system/
                             sudo systemctl enable ${SERVICE}
                           fi
 
-                          echo "Starting service..."
                           sudo systemctl daemon-reload
                           sudo systemctl start ${SERVICE}
                           sudo systemctl status ${SERVICE}
-                        fi
-
-            deploy-non-fresh:
-              tasks:
-                - exec:
-                    command: /bin/bash
-                    arguments:
-                      - -c
-                      - |
-                        if [ "$DEPLOY_TYPE" = "non-fresh" ]; then
-                          export BE_TARGET_DIR=/home/ubuntu/prime-square
-                          export BE_ARCHIVE_DIR=/home/ubuntu/archive
-                          export BACKUPS=/home/ubuntu/backups
-                          export SERVICE=PrimeSquare.service
-
-                          echo "Stopping service..."
+                        else
+                          echo "Performing Non-Fresh Deployment..."
                           sudo systemctl stop ${SERVICE}
-
-                          echo "Backing up existing JAR files..."
                           mkdir -p "${BACKUPS}"
-                          mv "${BE_TARGET_DIR}/*.jar" "${BACKUPS}/"
-
-                          echo "Extracting new artifacts..."
+                          find "${BE_TARGET_DIR}" -name "*.jar" -exec mv {} "${BACKUPS}/" \;
                           unzip -o "${BUILD_DIR}/ps_be_*.zip" -d "${BE_ARCHIVE_DIR}"
-                          find "${BE_ARCHIVE_DIR}" -name "*.jar" -exec cp {} "${BE_TARGET_DIR}" \;
-
-                          echo "Starting service..."
+                          find "${BE_ARCHIVE_DIR}" -name "*.jar" -exec cp {} "${BE_TARGET_DIR}/" \;
                           sudo systemctl start ${SERVICE}
                           sudo systemctl status ${SERVICE}
                         fi
@@ -179,4 +149,3 @@ environments:
       - backend-deployment
     environment_variables:
       DEPLOY_TYPE: ""
-
