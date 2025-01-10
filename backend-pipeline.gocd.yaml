@@ -33,7 +33,7 @@ pipelines:
                           echo "Fresh Deployment"
                           export DEPLOY_TYPE=fresh
               environment_variables:
-                  DEPLOY_TYPE: ""
+                DEPLOY_TYPE: ""
 
       - Prepare-Build-Environment:
           fetch_materials: false
@@ -75,61 +75,41 @@ pipelines:
           approval:
             type: manual
           jobs:
-            deploy-fresh:
+            deploy:
               tasks:
                 - exec:
                     command: /bin/bash
                     arguments:
                       - -c
                       - |
-                        if [ "$DEPLOY_TYPE" = "fresh" ]; then
-                          export BE_TARGET_DIR=/home/ubuntu/prime-square
-                          export SERVICE=PrimeSquare.service
+                        export DEPLOY_TYPE="${DEPLOY_TYPE:-fresh}"
+                        export BE_TARGET_DIR=/home/ubuntu/prime-square
+                        export SERVICE=PrimeSquare.service
+                        export BE_ARCHIVE_DIR=/home/ubuntu/archive
+                        export BACKUPS=/home/ubuntu/backups
+                        export BUILD_DIR=/home/ubuntu/builds
 
-                          echo "Creating BE_TARGET_DIR..."
+                        if [ "$DEPLOY_TYPE" = "fresh" ]; then
+                          echo "Performing Fresh Deployment..."
                           mkdir -p "${BE_TARGET_DIR}"
                           sudo chown -R ubuntu:ubuntu "${BE_TARGET_DIR}"
-
-                          echo "Unzipping backend artifacts..."
                           unzip -o "${BUILD_DIR}/ps_be_*.zip" -d "${BE_TARGET_DIR}"
 
-                          echo "Setting up service..."
                           if [ ! -f /etc/systemd/system/${SERVICE} ]; then
                             sudo cp "${BE_TARGET_DIR}/service/${SERVICE}" /etc/systemd/system/
                             sudo systemctl enable ${SERVICE}
                           fi
 
-                          echo "Starting service..."
                           sudo systemctl daemon-reload
                           sudo systemctl start ${SERVICE}
                           sudo systemctl status ${SERVICE}
-                        fi
-
-            deploy-non-fresh:
-              tasks:
-                - exec:
-                    command: /bin/bash
-                    arguments:
-                      - -c
-                      - |
-                        if [ "$DEPLOY_TYPE" = "non-fresh" ]; then
-                          export BE_TARGET_DIR=/home/ubuntu/prime-square
-                          export BE_ARCHIVE_DIR=/home/ubuntu/archive
-                          export BACKUPS=/home/ubuntu/backups
-                          export SERVICE=PrimeSquare.service
-
-                          echo "Stopping service..."
+                        else
+                          echo "Performing Non-Fresh Deployment..."
                           sudo systemctl stop ${SERVICE}
-
-                          echo "Backing up existing JAR files..."
                           mkdir -p "${BACKUPS}"
-                          mv "${BE_TARGET_DIR}/*.jar" "${BACKUPS}/"
-
-                          echo "Extracting new artifacts..."
+                          find "${BE_TARGET_DIR}" -name "*.jar" -exec mv {} "${BACKUPS}/" \;
                           unzip -o "${BUILD_DIR}/ps_be_*.zip" -d "${BE_ARCHIVE_DIR}"
-                          find "${BE_ARCHIVE_DIR}" -name "*.jar" -exec cp {} "${BE_TARGET_DIR}" \;
-
-                          echo "Starting service..."
+                          find "${BE_ARCHIVE_DIR}" -name "*.jar" -exec cp {} "${BE_TARGET_DIR}/" \;
                           sudo systemctl start ${SERVICE}
                           sudo systemctl status ${SERVICE}
                         fi
@@ -147,6 +127,7 @@ pipelines:
                     arguments:
                       - -c
                       - |
+                        export DEPLOY_TYPE="${DEPLOY_TYPE:-fresh}"
                         if [ "$DEPLOY_TYPE" = "fresh" ]; then
                           export DB_SCRIPTS_DIR=/home/ubuntu/prime-square/database-scripts
                           export DB_USER=psdbadmin
@@ -166,3 +147,6 @@ environments:
   Frontandbackend:
     pipelines:
       - backend-deployment
+    environment_variables:
+      DEPLOY_TYPE: ""
+
