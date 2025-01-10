@@ -154,8 +154,6 @@ pipelines:
                 - ubuntu
               environment_variables:
                 GOCD_ENVIRONMENT: Frontandbackend
-    parameters:
-      DROP_DB: Yes/No
 environments:
   Frontandbackend:
     pipelines:
