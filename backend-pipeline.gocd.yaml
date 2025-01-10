@@ -32,6 +32,7 @@ pipelines:
                         else
                           echo "Fresh Deployment"
                           export DEPLOY_TYPE=fresh
+                        fi
               environment_variables:
                 DEPLOY_TYPE: ""
 
