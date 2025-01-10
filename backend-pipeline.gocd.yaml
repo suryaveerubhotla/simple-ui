@@ -16,7 +16,7 @@ pipelines:
           fetch_materials: true
           clean_workspace: false
           approval:
-            type: auto
+            type: manual
           jobs:
             check-dir:
               tasks:
@@ -40,7 +40,7 @@ pipelines:
           fetch_materials: false
           clean_workspace: false
           approval:
-            type: auto
+            type: manual
           jobs:
             prepare-build:
               tasks:
@@ -76,7 +76,7 @@ pipelines:
           fetch_materials: false
           clean_workspace: false
           approval:
-            type: auto
+            type: manual
           jobs:
             deploy:
               tasks:
@@ -148,7 +148,7 @@ pipelines:
           fetch_materials: false
           clean_workspace: false
           approval:
-            type: auto
+            type: manual
           jobs:
             db-scripts:
               tasks:
