@@ -83,6 +83,8 @@ pipelines:
                         echo "Archiving existing JAR file(s)..."
                         if ls "${BE_TARGET_DIR}/core-*.jar" > /dev/null 2>&1; then
                           sudo mv "${BE_TARGET_DIR}/core-*.jar" "${Backup}/core-$(date +%F-%T).jar"
+                          echo "Listing files in Backup..."
+                          ls -l "${Backup}"
                         fi
 
                         echo "Copying new JAR file to BE_TARGET_DIR..."
@@ -90,13 +92,12 @@ pipelines:
 
                         echo "Cleaning up BE_ARCHIVE_DIR..."
                         rm -rf "${BE_ARCHIVE_DIR}/*"\
+                        ls -l "${BE_ARCHIVE_DIR}"
 
                         echo "Listing files in BE_TARGET_DIR..."
                         ls -l "${BE_TARGET_DIR}"
 
-                        echo "Checking and copying service file if needed..."
-                        if [ ! -f /etc/systemd/system/${SERVICE} ]; then
-                          sudo cp "${BE_TARGET_DIR}/service/${SERVICE}" /etc/systemd/system/
+                        echo "Enabling the service..."
                           sudo systemctl enable ${SERVICE}
                         fi
 
