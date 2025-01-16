@@ -65,6 +65,9 @@ pipelines:
                          if ls "${BUILD_DIR}/ps_be_*.zip" > /dev/null 2>&1; then
                           echo "Found existing ps_be_*.zip files. Removing them..."
                           sudo rm -f "${BUILD_DIR}/ps_be_*.zip" || { echo "Failed to remove existing zip files"; exit 1; }
+
+                        echo "Changing permissions of BUILD_DIR to ubuntu:ubuntu..."             
+                          sudo chown -R ubuntu:ubuntu "${BUILD_DIR}" || { echo "Failed to change permissions of BUILD_DIR"; exit 1; }
                         else
                         echo "No existing ps_be_*.zip files found. Proceeding..."
                         fi
@@ -97,8 +100,6 @@ pipelines:
                         echo "Listing extracted files in BE_TARGET_DIR..."
                         ls -l "${BE_TARGET_DIR}"
 
-                        echo "Changing permissions of BUILD_DIR to ubuntu:ubuntu..."             
-                        sudo chown -R ubuntu:ubuntu "${BUILD_DIR}" || { echo "Failed to change permissions of BUILD_DIR"; exit 1; }
 
                         echo "Checking and copying service file if needed..."
                         if [ ! -f /etc/systemd/system/${SERVICE} ]; then
