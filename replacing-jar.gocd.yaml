@@ -39,14 +39,15 @@ pipelines:
                         export SFTP_KEY=/var/go/.ssh/id_rsa
                         export SFTP_UPLOADS_DIR=uploads
 
-                        echo "creating BUILD_DIR and BACKUP_DIR"
-                        mkdir -p "${BUILD_DIR}"
-                        mkdir -p "${BACKUP_DIR}"
+                        echo "Creating BUILD_DIR and BACKUP_DIR..."
+                        sudo mkdir -p "${BUILD_DIR}" "${BACKUP_DIR}"
+                        sudo chown -R ubuntu:ubuntu "${BUILD_DIR}" "${BACKUP_DIR}"
+                        sudo chmod -R 775 "${BUILD_DIR}" "${BACKUP_DIR}"
 
-                        echo "Remove old backend zip files"
+                        echo "Removing old backend zip files..."
                         sudo rm -f "${BUILD_DIR}/ps_be_*.zip"
 
-                        echo "Fetch backend zip file from SFTP"
+                        echo "Fetching backend zip file from SFTP..."
                         sftp -o StrictHostKeyChecking=no -i "${SFTP_KEY}" "${SFTP_USER}@${SFTP_HOST}" <<EOF
                         cd ${SFTP_UPLOADS_DIR}
                         get ps_be_*.zip ${BUILD_DIR}
@@ -64,35 +65,29 @@ pipelines:
                         fi
 
                         echo "Ensuring archive directory exists..."
-                        mkdir -p "${BE_ARCHIVE_DIR}"
+                        sudo mkdir -p "${BE_ARCHIVE_DIR}"
+                        sudo chown -R ubuntu:ubuntu "${BE_ARCHIVE_DIR}"
+                        sudo chmod -R 775 "${BE_ARCHIVE_DIR}"
 
+                        echo "Finding and unzipping backend zip file..."
                         BE_ZIP=$(ls ${BUILD_DIR}/ps_be*.zip 2>/dev/null | head -n 1)
                         if [ -z "${BE_ZIP}" ]; then
                           echo "No ps_be zip file found in ${BUILD_DIR}!"
                           exit 1
                         fi
-                        echo "Unzipping backend zip file..."
                         unzip -o "${BE_ZIP}" -d "${BE_ARCHIVE_DIR}"
 
-                        echo "ownership permission for BUILD_DIR and BACKUP_DIR "
-                        sudo chown -R ubuntu:ubuntu "${BUILD_DIR}" || { echo "Failed to change ownership of BUILD_DIR"; exit 1; }
-                        sudo chmod -R 775 "${BUILD_DIR}" || { echo "Failed to set permissions for BUILD_DIR"; exit 1; }
-                        sudo chown -R ubuntu:ubuntu "${BACKUP_DIR}" || { echo "Failed to change ownership of BACKUP_DIR"; exit 1; }
-                        sudo chmod -R 775 "${BACKUP_DIR}" || { echo "Failed to set permissions for BACKUP_DIR"; exit 1; }
-                        sudo chown -R ubuntu:ubuntu "${BE_ARCHIVE_DIR}" || { echo "Failed to change ownership of BE_ARCHIVE_DIR"; exit 1; }
-                        sudo chmod -R 775 "${BE_ARCHIVE_DIR}" || { echo "Failed to set permissions for BE_ARCHIVE_DIR"; exit 1; }
-
-                        echo "Check for JAR file"
+                        echo "Checking for JAR file..."
                         JAR_FILE=$(find "${BE_ARCHIVE_DIR}" -type f -name "core-*.jar" | head -n 1)
                         if [ -z "${JAR_FILE}" ]; then
                           echo "No core-*.jar file found in the archive!"
                           exit 1
                         fi
 
-                        echo "Backup existing JAR file"
+                        echo "Backing up existing JAR file..."
                         if ls "${BE_TARGET_DIR}/core-*.jar" > /dev/null 2>&1; then
-                          echo "Backing up existing JAR file..."
-                          sudo mv "${BE_TARGET_DIR}/core-*.jar" "${BACKUP_DIR}/core-$(date +%F-%T).jar" || { echo "Failed to backup core JAR"; exit 1; }
+                          TIMESTAMP=$(date +%F-%T)
+                          sudo mv "${BE_TARGET_DIR}/core-*.jar" "${BACKUP_DIR}/core-${TIMESTAMP}.jar" || { echo "Failed to backup core JAR"; exit 1; }
                           echo "Backup created at ${BACKUP_DIR}/core-${TIMESTAMP}.jar"
                         fi
 
@@ -100,11 +95,10 @@ pipelines:
                         sudo cp "${JAR_FILE}" "${BE_TARGET_DIR}" || { echo "Failed to copy new JAR file"; exit 1; }
 
                         echo "Cleaning up archive directory..."
-                        sudo rm -rf "${BE_ARCHIVE_DIR}/*" || { echo "Failed to clean up archive directory"; exit 1; }
+                        sudo rm -rf "${BE_ARCHIVE_DIR:?}"/* || { echo "Failed to clean up archive directory"; exit 1; }
 
-                        echo "Copy and enable service file if necessary"
+                        echo "Copying and enabling service file if necessary..."
                         if [ ! -f /etc/systemd/system/${SERVICE} ]; then
-                          echo "Copying service file..."
                           sudo cp "${BE_TARGET_DIR}/service/${SERVICE}" /etc/systemd/system/
                           sudo systemctl enable ${SERVICE}
                         fi
