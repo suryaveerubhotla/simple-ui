@@ -31,6 +31,7 @@ pipelines:
                         echo "Exporting environment variables..."
                         export BUILD_DIR=/home/ubuntu/builds
                         export BE_TARGET_DIR=/home/ubuntu/prime-square
+                        export BACKUP_DIR=/home/ubuntu/prime-square-backup
                         export BE_ARCHIVE_DIR=/home/ubuntu/archive
                         export SERVICE=PrimeSquare.service
                         export SFTP_HOST=172.16.7.116
@@ -82,9 +83,9 @@ pipelines:
                         echo "Backup existing JAR file"
                         if ls "${BE_TARGET_DIR}/core-*.jar" > /dev/null 2>&1; then
                           echo "Backing up existing JAR file..."
-                          BACKUP_FILE="${BE_ARCHIVE_DIR}/core-$(date +%F-%T).jar"
-                          sudo mv "${BE_TARGET_DIR}/core-*.jar" "${BACKUP_FILE}" || { echo "Failed to backup core JAR"; exit 1; }
-                          echo "Backup created at ${BACKUP_FILE}"
+                          TIMESTAMP=$(date +%F-%T)
+                          sudo mv "${BE_TARGET_DIR}/core-*.jar" "${BACKUP_DIR}/core-${TIMESTAMP}.jar" || { echo "Failed to backup core JAR"; exit 1; }
+                          echo "Backup created at ${BACKUP_DIR}/core-${TIMESTAMP}.jar"
                         fi
 
                         echo "Copying new JAR file to target directory..."
