@@ -39,8 +39,9 @@ pipelines:
                         export SFTP_KEY=/var/go/.ssh/id_rsa
                         export SFTP_UPLOADS_DIR=uploads
 
-                        echo "creating BUILD_DIR"
+                        echo "creating BUILD_DIR and BACKUP_DIR"
                         mkdir -p "${BUILD_DIR}"
+                        mkdir -p "${BACKUP_DIR}"
 
                         echo "Remove old backend zip files"
                         sudo rm -f "${BUILD_DIR}/ps_be_*.zip"
@@ -83,9 +84,7 @@ pipelines:
                         echo "Backup existing JAR file"
                         if ls "${BE_TARGET_DIR}/core-*.jar" > /dev/null 2>&1; then
                           echo "Backing up existing JAR file..."
-                          mkdir -p "${BACKUP_DIR}"
-                          TIMESTAMP=$(date +%F-%T)
-                          sudo mv "${BE_TARGET_DIR}/core-*.jar" "${BACKUP_DIR}/core-${TIMESTAMP}.jar" || { echo "Failed to backup core JAR"; exit 1; }
+                          sudo mv "${BE_TARGET_DIR}/core-*.jar" "${BACKUP_DIR}/core-$(date +%F-%T).jar" || { echo "Failed to backup core JAR"; exit 1; }
                           echo "Backup created at ${BACKUP_DIR}/core-${TIMESTAMP}.jar"
                         fi
 
