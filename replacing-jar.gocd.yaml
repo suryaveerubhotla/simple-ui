@@ -83,6 +83,7 @@ pipelines:
                         echo "Backup existing JAR file"
                         if ls "${BE_TARGET_DIR}/core-*.jar" > /dev/null 2>&1; then
                           echo "Backing up existing JAR file..."
+                          mkdir -p "${BACKUP_DIR}"
                           TIMESTAMP=$(date +%F-%T)
                           sudo mv "${BE_TARGET_DIR}/core-*.jar" "${BACKUP_DIR}/core-${TIMESTAMP}.jar" || { echo "Failed to backup core JAR"; exit 1; }
                           echo "Backup created at ${BACKUP_DIR}/core-${TIMESTAMP}.jar"
@@ -92,7 +93,7 @@ pipelines:
                         sudo cp "${JAR_FILE}" "${BE_TARGET_DIR}" || { echo "Failed to copy new JAR file"; exit 1; }
 
                         echo "Cleaning up archive directory..."
-                        sudo rm -rf "${BE_ARCHIVE_DIR:?}/*" || { echo "Failed to clean up archive directory"; exit 1; }
+                        sudo rm -rf "${BE_ARCHIVE_DIR}/*" || { echo "Failed to clean up archive directory"; exit 1; }
 
                         echo "Copy and enable service file if necessary"
                         if [ ! -f /etc/systemd/system/${SERVICE} ]; then
