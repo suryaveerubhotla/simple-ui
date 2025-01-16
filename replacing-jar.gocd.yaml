@@ -31,19 +31,20 @@ pipelines:
                         echo "Exporting environment variables..."
                         export BUILD_DIR=/home/ubuntu/builds
                         export BE_TARGET_DIR=/home/ubuntu/prime-square
-                        export BE_ARCHIVE_DIR=/home/ubuntu/archive/
-                        export Backup=/home/ubuntu/Backup
+                        export BE_ARCHIVE_DIR=/home/ubuntu/archive
                         export SERVICE=PrimeSquare.service
                         export SFTP_HOST=172.16.7.116
                         export SFTP_USER=surya
                         export SFTP_KEY=/var/go/.ssh/id_rsa
                         export SFTP_UPLOADS_DIR=uploads
-                        
-                        echo "creating BUILD_DIR if needed..."
+
+                        echo "creating BUILD_DIR"
                         mkdir -p "${BUILD_DIR}"
-                        echo "Checking for existing backend files in BUILD_DIR..."
+
+                        echo "Remove old backend zip files"
                         sudo rm -f "${BUILD_DIR}/ps_be_*.zip"
-                        echo "Accessing SFTP machine to fetch the backend zip file..."
+
+                        echo "Fetch backend zip file from SFTP"
                         sftp -o StrictHostKeyChecking=no -i "${SFTP_KEY}" "${SFTP_USER}@${SFTP_HOST}" <<EOF
                         cd ${SFTP_UPLOADS_DIR}
                         get ps_be_*.zip ${BUILD_DIR}
@@ -55,58 +56,54 @@ pipelines:
                           exit 1
                         fi
 
+                        echo "Stopping service ${SERVICE} if running..."
                         if systemctl is-active --quiet ${SERVICE}; then
                           sudo systemctl stop ${SERVICE}
                         fi
 
-                        echo "Creating BE_ARCHIVE_DIR and Backup"
+                        echo "Ensuring archive directory exists..."
                         mkdir -p "${BE_ARCHIVE_DIR}"
-                        mkdir -p "${Backup}"
 
-                        echo "Checking for backend (ps_be)..."
                         BE_ZIP=$(ls ${BUILD_DIR}/ps_be*.zip 2>/dev/null | head -n 1)
                         if [ -z "${BE_ZIP}" ]; then
                           echo "No ps_be zip file found in ${BUILD_DIR}!"
                           exit 1
                         fi
-
-                        echo "Unzip BE_ZIP to BE_ARCHIVE_DIR..."
+                        echo "Unzipping backend zip file..."
                         unzip -o "${BE_ZIP}" -d "${BE_ARCHIVE_DIR}"
 
-                        echo "Checking for JAR file..."
+                        echo "Check for JAR file"
                         JAR_FILE=$(find "${BE_ARCHIVE_DIR}" -type f -name "core-*.jar" | head -n 1)
                         if [ -z "${JAR_FILE}" ]; then
                           echo "No core-*.jar file found in the archive!"
                           exit 1
                         fi
 
-                        echo "Archiving existing JAR file(s)..."
+                        echo "Backup existing JAR file"
                         if ls "${BE_TARGET_DIR}/core-*.jar" > /dev/null 2>&1; then
-                          sudo mv "${BE_TARGET_DIR}/core-*.jar" "${Backup}/core-$(date +%F-%T).jar"
-                          echo "Listing files in Backup..."
-                          ls -l "${Backup}"
+                          echo "Backing up existing JAR file..."
+                          BACKUP_FILE="${BE_ARCHIVE_DIR}/core-$(date +%F-%T).jar"
+                          sudo mv "${BE_TARGET_DIR}/core-*.jar" "${BACKUP_FILE}" || { echo "Failed to backup core JAR"; exit 1; }
+                          echo "Backup created at ${BACKUP_FILE}"
                         fi
 
-                        echo "Copying new JAR file to BE_TARGET_DIR..."
-                        sudo cp "${JAR_FILE}" "${BE_TARGET_DIR}"
+                        echo "Copying new JAR file to target directory..."
+                        sudo cp "${JAR_FILE}" "${BE_TARGET_DIR}" || { echo "Failed to copy new JAR file"; exit 1; }
 
-                        echo "Cleaning up BE_ARCHIVE_DIR..."
-                        rm -rf "${BE_ARCHIVE_DIR}/*"
+                        echo "Cleaning up archive directory..."
+                        sudo rm -rf "${BE_ARCHIVE_DIR:?}/*" || { echo "Failed to clean up archive directory"; exit 1; }
 
-                        echo "listing files in BE_ARCHIVE_DIR"
-                        ls -l "${BE_ARCHIVE_DIR}"
-
-                        echo "Listing files in BE_TARGET_DIR..."
-                        ls -l "${BE_TARGET_DIR}"
-
-                        echo "Enabling the service..."
+                        echo "Copy and enable service file if necessary"
+                        if [ ! -f /etc/systemd/system/${SERVICE} ]; then
+                          echo "Copying service file..."
+                          sudo cp "${BE_TARGET_DIR}/service/${SERVICE}" /etc/systemd/system/
                           sudo systemctl enable ${SERVICE}
+                        fi
 
-                        echo "Jar replaced successfully . Starting the service..."
+                        echo "Reloading systemd and restarting service..."
                         sudo systemctl daemon-reload
                         sudo systemctl start ${SERVICE}
                         sudo systemctl status ${SERVICE}
-
 environments:
   Frontandbackend:
     pipelines:
