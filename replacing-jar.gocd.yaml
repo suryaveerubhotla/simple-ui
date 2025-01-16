@@ -119,7 +119,7 @@ pipelines:
                           fi
 
                           echo "Copying new JAR file to BE_TARGET_DIR..."
-                          cp "${JAR_FILE}" "${BE_TARGET_DIR}" || { echo "Failed to copy JAR file"; exit 1; }
+                          sudo cp "${JAR_FILE}" "${BE_TARGET_DIR}" || { echo "Failed to copy JAR file"; exit 1; }
 
                           echo "Cleaning up BE_ARCHIVE_DIR..."
                           rm -rf "${BE_ARCHIVE_DIR}" || { echo "Failed to clean up BE_ARCHIVE_DIR"; exit 1; }
