@@ -91,7 +91,9 @@ pipelines:
                         sudo cp "${JAR_FILE}" "${BE_TARGET_DIR}"
 
                         echo "Cleaning up BE_ARCHIVE_DIR..."
-                        rm -rf "${BE_ARCHIVE_DIR}/*"\
+                        rm -rf "${BE_ARCHIVE_DIR}/*"
+
+                        echo "listing files in BE_ARCHIVE_DIR"
                         ls -l "${BE_ARCHIVE_DIR}"
 
                         echo "Listing files in BE_TARGET_DIR..."
@@ -99,7 +101,6 @@ pipelines:
 
                         echo "Enabling the service..."
                           sudo systemctl enable ${SERVICE}
-                        fi
 
                         echo "Jar replaced successfully . Starting the service..."
                         sudo systemctl daemon-reload
