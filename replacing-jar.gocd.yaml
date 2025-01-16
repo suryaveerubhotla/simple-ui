@@ -42,8 +42,6 @@ pipelines:
                         echo "creating BUILD_DIR and BACKUP_DIR"
                         mkdir -p "${BUILD_DIR}"
                         mkdir -p "${BACKUP_DIR}"
-                        sudo chown -R ubuntu:ubuntu "${BUILD_DIR}" || { echo "Failed to change ownership of BUILD_DIR"; exit 1; }
-                        sudo chown -R ubuntu:ubuntu "${BACKUP_DIR}" || { echo "Failed to change ownership of BACKUP_DIR"; exit 1; }
 
                         echo "Remove old backend zip files"
                         sudo rm -f "${BUILD_DIR}/ps_be_*.zip"
@@ -75,6 +73,10 @@ pipelines:
                         fi
                         echo "Unzipping backend zip file..."
                         unzip -o "${BE_ZIP}" -d "${BE_ARCHIVE_DIR}"
+
+                        echo "ownership permission for BUILD_DIR and BACKUP_DIR "
+                        sudo chown -R ubuntu:ubuntu "${BUILD_DIR}" || { echo "Failed to change ownership of BUILD_DIR"; exit 1; }
+                        sudo chown -R ubuntu:ubuntu "${BACKUP_DIR}" || { echo "Failed to change ownership of BACKUP_DIR"; exit 1; }
 
                         echo "Check for JAR file"
                         JAR_FILE=$(find "${BE_ARCHIVE_DIR}" -type f -name "core-*.jar" | head -n 1)
