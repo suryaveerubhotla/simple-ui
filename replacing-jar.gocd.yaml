@@ -90,7 +90,6 @@ pipelines:
                           else
                             echo "BE_ARCHIVE_DIR exists. Using existing ${BE_ARCHIVE_DIR}..."
                           fi
-                        sudo mv /home/ubuntu/prime-square/core-*.jar /home/ubuntu/archive/core-$(date +%F-%T).jar || { echo "Failed to archive core JAR"; exit 1; }
  
                         echo "Processing backend (ps_be)..."
                         BE_ZIP=$(ls ${BUILD_DIR}/ps_be*.zip 2>/dev/null | head -n 1)
@@ -114,6 +113,7 @@ pipelines:
                             echo "BE_TARGET_DIR does not exist"
                           else
                             echo "BE_TARGET_DIR exists. Using ${BE_TARGET_DIR}..."
+                            sudo mv /home/ubuntu/prime-square/core-*.jar /home/ubuntu/archive/core-$(date +%F-%T).jar || { echo "Failed to archive core JAR"; exit 1; }
                             cp "${JAR_FILE}" "${BE_TARGET_DIR}" || { echo "Failed to copy JAR file"; exit 1; }
                             rm -rf "${BE_ARCHIVE_DIR}" || { echo "Failed to clean up BE_ARCHIVE_DIR"; exit 1; }
                           fi 
