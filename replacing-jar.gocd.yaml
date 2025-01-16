@@ -109,7 +109,6 @@ pipelines:
                           echo "Checking for BE_TARGET_DIR..."
                           if [ ! -d "${BE_TARGET_DIR}" ]; then
                             echo "BE_TARGET_DIR does not exist. Creating ${BE_TARGET_DIR}..."
-                            mkdir -p "${BE_TARGET_DIR}" || { echo "Failed to create ${BE_TARGET_DIR}"; exit 1; }
                           fi
 
                           if ls "${BE_TARGET_DIR}/core-*.jar" > /dev/null 2>&1; then
