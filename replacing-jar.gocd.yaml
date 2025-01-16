@@ -115,7 +115,7 @@ pipelines:
                           else
                             echo "BE_TARGET_DIR exists. Using ${BE_TARGET_DIR}..."
                             cp "${JAR_FILE}" "${BE_TARGET_DIR}" || { echo "Failed to copy JAR file"; exit 1; }
-                            rm -rf "${BE_ARCHIVE_DIR}" || { echo "Failed to clean up BE temp dir"; exit 1; }
+                            rm -rf "${BE_ARCHIVE_DIR}" || { echo "Failed to clean up BE_ARCHIVE_DIR"; exit 1; }
                           fi 
            
                           echo "Replacing core JAR..."
