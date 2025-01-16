@@ -83,7 +83,13 @@ pipelines:
                             echo "${SERVICE} does not exist. Proceeding..."
                           fi
 
-                        echo "Archiving existing core JAR..."
+                        echo "Checking for BE_ARCHIVE_DIR and Archiving existing core JAR..."
+                          if [ ! -d "${BE_ARCHIVE_DIR}" ]; then
+                            echo "BE_ARCHIVE_DIR does not exist. Creating ${BE_ARCHIVE_DIR}..."
+                            mkdir -p "${BE_ARCHIVE_DIR}" || { echo "Failed to create ${BE_ARCHIVE_DIR}"; exit 1; }
+                          else
+                            echo "BE_ARCHIVE_DIR exists. Using existing ${BE_ARCHIVE_DIR}..."
+                          fi
                         sudo mv /home/ubuntu/prime-square/core-*.jar /home/ubuntu/archive/core-$(date +%F-%T).jar || { echo "Failed to archive core JAR"; exit 1; }
  
                         echo "Processing backend (ps_be)..."
