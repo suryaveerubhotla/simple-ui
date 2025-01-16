@@ -91,18 +91,18 @@ pipelines:
                             echo "BE_ARCHIVE_DIR exists. Using existing ${BE_ARCHIVE_DIR}..."
                           fi
  
-                        echo "Processing backend (ps_be)..."
+                        echo "Checking for backend (ps_be)..."
                         BE_ZIP=$(ls ${BUILD_DIR}/ps_be*.zip 2>/dev/null | head -n 1)
-
                         if [ -z "${BE_ZIP}" ]; then
                           echo "No ps_be zip file found in ${BUILD_DIR}!"
                           exit 1
-                        fi
+                        else
+                          echo "Found backend zip: ${BE_ZIP}"
 
-                        echo "Found backend zip: ${BE_ZIP}"
-                        mkdir -p "${BE_ARCHIVE_DIR}" || { echo "Failed to create backend directories"; exit 1; }
+                        echo "Unzipping backend.zip"
                         unzip -o "${BE_ZIP}" -d "${BE_ARCHIVE_DIR}" || { echo "Failed to unzip ps_be"; exit 1; }
                         JAR_FILE=$(find "${BE_TEMP_DIR}" -type f -name "core-*.jar" | head -n 1)
+
                         if [ -z "${JAR_FILE}" ]; then
                           echo "No core-*.jar file found in the ps_be zip!"
                           exit 1
@@ -119,22 +119,17 @@ pipelines:
                           else
                             echo "No JAR file found to archive."
                           fi
-                          
+
                             cp "${JAR_FILE}" "${BE_TARGET_DIR}" || { echo "Failed to copy JAR file"; exit 1; }
                             rm -rf "${BE_ARCHIVE_DIR}" || { echo "Failed to clean up BE_ARCHIVE_DIR"; exit 1; }
                           fi 
-           
-                          echo "Replacing core JAR..."
-                          sudo mv /home/ubuntu/archive/core-*.jar /home/ubuntu/prime-square/ || { echo "Failed to replace core JAR"; exit 1; }
  
                           echo "Listing extracted files in BE_TARGET_DIR..."
                           ls -l "${BE_TARGET_DIR}"               
  
                           echo "Checking and copying service file if needed..."
-
                           if [ ! -f /etc/systemd/system/${SERVICE} ]; then
                             sudo cp "${BE_TARGET_DIR}/service/${SERVICE}" /etc/systemd/system/ || { echo "Failed to copy service file"; exit 1; }
- 
                           echo "Enabling the service..."
                             sudo systemctl enable ${SERVICE} || { echo "Failed to enable ${SERVICE}"; exit 1; }
  
