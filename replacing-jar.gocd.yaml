@@ -32,6 +32,7 @@ pipelines:
                         export BUILD_DIR=/home/ubuntu/builds
                         export BE_TARGET_DIR=/home/ubuntu/prime-square
                         export BE_ARCHIVE_DIR=/home/ubuntu/archive/
+                        export Backup=/home/ubuntu/Backup
                         export SERVICE=PrimeSquare.service
                         export SFTP_HOST=172.16.7.116
                         export SFTP_USER=surya
@@ -58,8 +59,9 @@ pipelines:
                           sudo systemctl stop ${SERVICE}
                         fi
 
-                        echo "Creating BE_ARCHIVE_DIR"
+                        echo "Creating BE_ARCHIVE_DIR and Backup"
                         mkdir -p "${BE_ARCHIVE_DIR}"
+                        mkdir -p "${Backup}"
 
                         echo "Checking for backend (ps_be)..."
                         BE_ZIP=$(ls ${BUILD_DIR}/ps_be*.zip 2>/dev/null | head -n 1)
@@ -80,14 +82,14 @@ pipelines:
 
                         echo "Archiving existing JAR file(s)..."
                         if ls "${BE_TARGET_DIR}/core-*.jar" > /dev/null 2>&1; then
-                          sudo mv "${BE_TARGET_DIR}/core-*.jar" "${BE_ARCHIVE_DIR}/core-$(date +%F-%T).jar"
+                          sudo mv "${BE_TARGET_DIR}/core-*.jar" "${Backup}/core-$(date +%F-%T).jar"
                         fi
 
                         echo "Copying new JAR file to BE_TARGET_DIR..."
                         sudo cp "${JAR_FILE}" "${BE_TARGET_DIR}"
 
                         echo "Cleaning up BE_ARCHIVE_DIR..."
-                        rm -rf "${BE_ARCHIVE_DIR}"\
+                        rm -rf "${BE_ARCHIVE_DIR}/*"\
 
                         echo "Listing files in BE_TARGET_DIR..."
                         ls -l "${BE_TARGET_DIR}"
@@ -97,7 +99,7 @@ pipelines:
                           sudo cp "${BE_TARGET_DIR}/service/${SERVICE}" /etc/systemd/system/
                           sudo systemctl enable ${SERVICE}
                         fi
-                        
+
                         echo "Jar replaced successfully . Starting the service..."
                         sudo systemctl daemon-reload
                         sudo systemctl start ${SERVICE}
