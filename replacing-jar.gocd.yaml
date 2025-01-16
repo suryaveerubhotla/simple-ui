@@ -31,7 +31,7 @@ pipelines:
                         echo "Exporting environment variables..."
                         export BUILD_DIR=/home/ubuntu/builds
                         export BE_TARGET_DIR=/home/ubuntu/prime-square                      
-                        export BE_ARCHIVE_DIR=/home/ubuntu/archive/temp-extract
+                        export BE_ARCHIVE_DIR=/home/ubuntu/archive/
                         export SERVICE=PrimeSquare.service
                         export DB_SCRIPTS_DIR=/home/ubuntu/prime-square/database-scripts
                         export DB_USER=psdbadmin
