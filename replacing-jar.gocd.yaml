@@ -76,7 +76,11 @@ pipelines:
 
                         echo "ownership permission for BUILD_DIR and BACKUP_DIR "
                         sudo chown -R ubuntu:ubuntu "${BUILD_DIR}" || { echo "Failed to change ownership of BUILD_DIR"; exit 1; }
+                        sudo chmod -R 775 "${BUILD_DIR}" || { echo "Failed to set permissions for BUILD_DIR"; exit 1; }
                         sudo chown -R ubuntu:ubuntu "${BACKUP_DIR}" || { echo "Failed to change ownership of BACKUP_DIR"; exit 1; }
+                        sudo chmod -R 775 "${BACKUP_DIR}" || { echo "Failed to set permissions for BACKUP_DIR"; exit 1; }
+                        sudo chown -R ubuntu:ubuntu "${BE_ARCHIVE_DIR}" || { echo "Failed to change ownership of BE_ARCHIVE_DIR"; exit 1; }
+                        sudo chmod -R 775 "${BE_ARCHIVE_DIR}" || { echo "Failed to set permissions for BE_ARCHIVE_DIR"; exit 1; }
 
                         echo "Check for JAR file"
                         JAR_FILE=$(find "${BE_ARCHIVE_DIR}" -type f -name "core-*.jar" | head -n 1)
