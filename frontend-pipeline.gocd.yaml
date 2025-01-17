@@ -13,10 +13,7 @@ pipelines:
         branch: main
     parameters:
       TARGET_HOST: 172.16.7.112
-      BUILD_FILE: ps_ui_1.1.26_idfc_1.1.13-868acb3-344.zip
       REPO_URL: https://github.com/suryaveerubhotla/simple-ui.git
-      SFTP_USER: surya
-      SFTP_HOST: 172.16.7.116
     stages:
       - Stage1:
           fetch_materials: true
@@ -30,7 +27,17 @@ pipelines:
               resources:
                 - ubuntu
               environment_variables:
-                GOCD_ENVIRONMENT: Frontandbackend
+                BUILD_DIR: /home/ubuntu/builds
+                BE_TARGET_DIR: /home/ubuntu/prime-square
+                BE_ARCHIVE_DIR: /home/ubuntu/archive
+                SERVICE: PrimeSquare.service
+                DB_SCRIPTS_DIR: /home/ubuntu/prime-square/database-scripts
+                DB_USER: psdbadmin
+                DB_PASS: 6%EOm@Te1sb19Th6
+                SFTP_HOST: 172.16.7.116
+                SFTP_USER: surya
+                SFTP_KEY: /var/go/.ssh/id_rsa
+                SFTP_UPLOADS_DIR: uploads
               timeout: 0
               tasks:
                 - exec:
@@ -38,40 +45,54 @@ pipelines:
                     arguments:
                       - "-c"
                       - |
-                        if [ ! -d "/home/ubuntu/archive" ]; then
-                          sudo mkdir -p /home/ubuntu/archive
+                        if [ ! -d "$BE_ARCHIVE_DIR" ]; then
+                          sudo mkdir -p $BE_ARCHIVE_DIR
                         else
-                          echo "Directory /home/ubuntu/archive already exists."
+                          echo "Directory $BE_ARCHIVE_DIR already exists."
                         fi
                 - exec:
                     command: sudo
                     arguments:
                       - "chown"
                       - "go:go"
-                      - "/home/ubuntu/archive"
+                      - "$BE_ARCHIVE_DIR"
                 - exec:
                     command: bash
                     arguments:
                       - "-c"
                       - |
-                        sftp -o StrictHostKeyChecking=no -i /var/go/.ssh/id_rsa "#{SFTP_USER}"@"#{SFTP_HOST}" <<EOF
-                        ls /uploads
-                        get /uploads/#{BUILD_FILE} /home/ubuntu/archive/#{BUILD_FILE}
+                        LATEST_FILE=$(sftp -o StrictHostKeyChecking=no -i $SFTP_KEY "$SFTP_USER"@"$SFTP_HOST" <<EOF
+                        cd $SFTP_UPLOADS_DIR
+                        ls -t ps_ui_*.zip | head -n 1
                         bye
                         EOF
-                    run_if: passed
+                        )
+                        
+                        if [ -z "$LATEST_FILE" ]; then
+                          echo "No ps_ui_*.zip files found on SFTP server. Exiting."
+                          exit 1
+                        fi
+
+                        echo "Latest file is: $LATEST_FILE"
+                        sftp -o StrictHostKeyChecking=no -i $SFTP_KEY "$SFTP_USER"@"$SFTP_HOST" <<EOF
+                        cd $SFTP_UPLOADS_DIR
+                        get "$LATEST_FILE" "$BE_ARCHIVE_DIR/$LATEST_FILE"
+                        bye
+                        EOF
+
+                        export BUILD_FILE=$LATEST_FILE
                 - exec:
                     command: ls
                     arguments:
                       - "-l"
-                      - "/home/ubuntu/archive"
+                      - "$BE_ARCHIVE_DIR"
                 - exec:
                     command: sudo
                     arguments:
                       - "chown"
                       - "-R"
                       - "ubuntu:ubuntu"
-                      - "/home/ubuntu/archive"
+                      - "$BE_ARCHIVE_DIR"
                 - exec:
                     command: sudo
                     arguments:
@@ -83,32 +104,32 @@ pipelines:
                     arguments:
                       - "-c"
                       - |
-                        if [ -d "/var/www/html/prime-square" ]; then
-                          sudo rm -rf /var/www/html/prime-square
+                        if [ -d "$BE_TARGET_DIR" ]; then
+                          sudo rm -rf $BE_TARGET_DIR
                         else
-                          echo "Directory /var/www/html/prime-square does not exist. Skipping removal."
+                          echo "Directory $BE_TARGET_DIR does not exist. Skipping removal."
                         fi
                 - exec:
                     command: sudo
                     arguments:
                       - "unzip"
-                      - "/home/ubuntu/archive/#{BUILD_FILE}"
+                      - "$BE_ARCHIVE_DIR/$BUILD_FILE"
                       - "-d"
-                      - "/var/www/html/"
+                      - "$BE_TARGET_DIR"
                 - exec:
                     command: sudo
                     arguments:
                       - "sed"
                       - "-i"
-                      - "s/https:\\/\\/ps-targethost:3804\\/prime-square/http:\\/\\/#{TARGET_HOST}\\/prime-square/g"
-                      - "/var/www/html/prime-square/main.e1f206db06620922.js"
+                      - "s/https:\/\/ps-targethost:3804\/prime-square/http:\/\/${TARGET_HOST}\/prime-square/g"
+                      - "$BE_TARGET_DIR/main.e1f206db06620922.js"
                 - exec:
                     command: sudo
                     arguments:
                       - "sed"
                       - "-i"
-                      - "s/https:\\/\\/ps-targethost:3804\\/prime-square/http:\\/\\/#{TARGET_HOST}\\/prime-square/g"
-                      - "/var/www/html/prime-square/assets/environment/environment.json"
+                      - "s/https:\/\/ps-targethost:3804\/prime-square/http:\/\/${TARGET_HOST}\/prime-square/g"
+                      - "$BE_TARGET_DIR/assets/environment/environment.json"
                 - exec:
                     command: sudo
                     arguments:
