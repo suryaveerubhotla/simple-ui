@@ -7,13 +7,10 @@ pipelines:
     display_order: -1
     materials:
       git-505a42e:
-        git: "#{REPO_URL}"
+        git: https://github.com/suryaveerubhotla/simple-ui.git
         shallow_clone: false
         auto_update: true
         branch: main
-    parameters:
-      TARGET_HOST: 172.16.7.112
-      REPO_URL: https://github.com/suryaveerubhotla/simple-ui.git
     stages:
       - Stage1:
           fetch_materials: true
@@ -28,8 +25,8 @@ pipelines:
                 - ubuntu
               environment_variables:
                 BUILD_DIR: /home/ubuntu/builds
-                BE_TARGET_DIR: /home/ubuntu/prime-square
-                BE_ARCHIVE_DIR: /home/ubuntu/archive
+                UI_ARCHIVE_DIR: /home/ubuntu/ui-archive
+                UI_TARGET_DIR: /var/www/html
                 SERVICE: PrimeSquare.service
                 DB_SCRIPTS_DIR: /home/ubuntu/prime-square/database-scripts
                 DB_USER: psdbadmin
@@ -38,6 +35,7 @@ pipelines:
                 SFTP_USER: surya
                 SFTP_KEY: /var/go/.ssh/id_rsa
                 SFTP_UPLOADS_DIR: uploads
+                TARGET_HOST: 172.16.7.112
               timeout: 0
               tasks:
                 - exec:
@@ -45,97 +43,45 @@ pipelines:
                     arguments:
                       - "-c"
                       - |
-                        if [ ! -d "$BE_ARCHIVE_DIR" ]; then
-                          sudo mkdir -p $BE_ARCHIVE_DIR
-                        else
-                          echo "Directory $BE_ARCHIVE_DIR already exists."
-                        fi
-                - exec:
-                    command: sudo
-                    arguments:
-                      - "chown"
-                      - "go:go"
-                      - "$BE_ARCHIVE_DIR"
-                - exec:
-                    command: bash
-                    arguments:
-                      - "-c"
-                      - |
-                        LATEST_FILE=$(sftp -o StrictHostKeyChecking=no -i $SFTP_KEY "$SFTP_USER"@"$SFTP_HOST" <<EOF
+                        echo "Ensure directories exist"
+                        sudo mkdir -p $UI_ARCHIVE_DIR $BUILD_DIR
+                        sudo chown ubuntu:ubuntu $UI_ARCHIVE_DIR $BUILD_DIR
+
+                        echo "Fetch the latest file from SFTP by timestamp"
+                        LATEST_FILE=$(sftp -o StrictHostKeyChecking=no -i $SFTP_KEY "$SFTP_USER@$SFTP_HOST" <<EOF
                         cd $SFTP_UPLOADS_DIR
                         ls -t ps_ui_*.zip | head -n 1
                         bye
                         EOF
                         )
-                        
+
                         if [ -z "$LATEST_FILE" ]; then
                           echo "No ps_ui_*.zip files found on SFTP server. Exiting."
                           exit 1
                         fi
 
                         echo "Latest file is: $LATEST_FILE"
-                        sftp -o StrictHostKeyChecking=no -i $SFTP_KEY "$SFTP_USER"@"$SFTP_HOST" <<EOF
+                        sftp -o StrictHostKeyChecking=no -i $SFTP_KEY "$SFTP_USER@$SFTP_HOST" <<EOF
                         cd $SFTP_UPLOADS_DIR
-                        get "$LATEST_FILE" "$BE_ARCHIVE_DIR/$LATEST_FILE"
+                        get "$LATEST_FILE" "$BUILD_DIR/$LATEST_FILE"
                         bye
                         EOF
 
-                        export BUILD_FILE=$LATEST_FILE
-                - exec:
-                    command: ls
-                    arguments:
-                      - "-l"
-                      - "$BE_ARCHIVE_DIR"
-                - exec:
-                    command: sudo
-                    arguments:
-                      - "chown"
-                      - "-R"
-                      - "ubuntu:ubuntu"
-                      - "$BE_ARCHIVE_DIR"
-                - exec:
-                    command: sudo
-                    arguments:
-                      - "systemctl"
-                      - "stop"
-                      - "apache2"
-                - exec:
-                    command: bash
-                    arguments:
-                      - "-c"
-                      - |
-                        if [ -d "$BE_TARGET_DIR" ]; then
-                          sudo rm -rf $BE_TARGET_DIR
-                        else
-                          echo "Directory $BE_TARGET_DIR does not exist. Skipping removal."
+                        echo "Downloaded $LATEST_FILE to $BUILD_DIR"
+
+                        echo "Extract and deploy the UI build"
+                        sudo systemctl stop apache2
+                        if [ -d "$UI_TARGET_DIR" ]; then
+                          sudo rm -rf $UI_TARGET_DIR
                         fi
-                - exec:
-                    command: sudo
-                    arguments:
-                      - "unzip"
-                      - "$BE_ARCHIVE_DIR/$BUILD_FILE"
-                      - "-d"
-                      - "$BE_TARGET_DIR"
-                - exec:
-                    command: sudo
-                    arguments:
-                      - "sed"
-                      - "-i"
-                      - 's/https:\/\/ps-targethost:3804\/prime-square/http:\/\/${TARGET_HOST}\/prime-square/g'
-                      - "$BE_TARGET_DIR/main.e1f206db06620922.js"
-                - exec:
-                    command: sudo
-                    arguments:
-                      - "sed"
-                      - "-i"
-                      - 's/https:\/\/ps-targethost:3804\/prime-square/http:\/\/${TARGET_HOST}\/prime-square/g'
-                      - "$BE_TARGET_DIR/assets/environment/environment.json"
-                - exec:
-                    command: sudo
-                    arguments:
-                      - "systemctl"
-                      - "start"
-                      - "apache2.service"
+                        sudo unzip "$BUILD_DIR/$LATEST_FILE" -d "$UI_TARGET_DIR"
+
+                        echo "Update configuration"
+                        sudo sed -i "s|https://ps-targethost:3804/prime-square|http://${TARGET_HOST}/prime-square|g" "$UI_TARGET_DIR/main.e1f206db06620922.js"
+                        sudo sed -i "s|https://ps-targethost:3804/prime-square|http://${TARGET_HOST}/prime-square|g" "$UI_TARGET_DIR/assets/environment/environment.json"
+
+                        echo "Restart Apache"
+                        sudo systemctl start apache2.service
 environments:
   Frontandbackend:
     pipelines:
