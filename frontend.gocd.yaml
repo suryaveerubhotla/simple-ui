@@ -1,6 +1,6 @@
 format_version: 10
 pipelines:
-  frontend-deployment:
+  frontend:
     group: deployment-group
     label_template: ${COUNT}
     lock_behavior: none
@@ -115,4 +115,4 @@ pipelines:
 environments:
   Frontandbackend:
     pipelines:
-      - frontend-deployment
+      - frontend
