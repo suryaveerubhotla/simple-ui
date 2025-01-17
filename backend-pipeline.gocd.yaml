@@ -72,23 +72,14 @@ pipelines:
                         echo "No existing ps_be_*.zip files found. Proceeding..."
                         fi
 
-                        echo "Fetching the latest ps_be_*.zip file from SFTP server..."
-                        latest_file=$(ssh -o StrictHostKeyChecking=no -i "${SFTP_KEY}" "${SFTP_USER}@${SFTP_HOST}" "cd ${SFTP_UPLOADS_DIR} && ls -t ps_be_*.zip 2>/dev/null | head -n 1")
-                        
-                        if [ -z "$latest_file" ]; then
-                          echo "No ps_be_*.zip file found on SFTP server. Exiting."
-                          exit 1
-                        fi
-
-                        echo "Latest file found: $latest_file"
-                        sftp -o StrictHostKeyChecking=no -i "${SFTP_KEY}" "${SFTP_USER}@${SFTP_HOST}" <<EOF
+                        echo "Accessing SFTP machine to fetch the backend zip file..."
+                        sftp -o StrictHostKeyChecking=no -i /var/go/.ssh/id_rsa ${SFTP_USER}@${SFTP_HOST} <<EOF
                         cd ${SFTP_UPLOADS_DIR}
-                        get "$latest_file" ${BUILD_DIR}
+                        get ps_be_*.zip ${BUILD_DIR}/
                         bye
                         EOF
-
                         if [ $? -ne 0 ]; then
-                          echo "Failed to fetch the latest backend.zip from SFTP."
+                          echo "Failed to fetch backend.zip from SFTP."
                           exit 1
                         fi
 
