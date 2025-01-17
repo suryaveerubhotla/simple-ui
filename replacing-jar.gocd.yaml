@@ -117,13 +117,13 @@ pipelines:
 
                           echo "Checking for BE_TARGET_DIR"
                           if [ ! -d "${BE_TARGET_DIR}" ]; then
-                            echo "BE_TARGET_DIR does not exist.
+                            echo "BE_TARGET_DIR does not exist."
                           else
                             echo "BE_TARGET_DIR exists."
                           fi
 
                           if ls "${BE_TARGET_DIR}/*.jar" > /dev/null 2>&1; then
-                            echo "Archiving existing JAR file(s)..."
+                            echo "Archiving existing JAR files..."
                             sudo mv "${BE_TARGET_DIR}"/* "${BACKUP_DIR}/" || { echo "Failed to archive core JAR"; exit 1; }
                           else
                             echo "No existing core-*.jar file found to archive."
