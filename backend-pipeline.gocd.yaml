@@ -119,7 +119,7 @@ pipelines:
 
                         echo "Giving execute permissions to database scripts..."
                         sudo chmod -R +x "${DB_SCRIPTS_DIR}" || { echo "Failed to give execute permissions to database scripts"; exit 1; }
-                        sudo chown -R ubuntu:ubuntu "${DB_SCRIPTS_DIR}" || { echo "Failed to change ownership of DB_SCRIPTS_DIR"; exit 1; }
+                        sudo chown -R go:go "${DB_SCRIPTS_DIR}" || { echo "Failed to change ownership of DB_SCRIPTS_DIR"; exit 1; }
 
                         echo "Executing database scripts..."
                         sudo mysql < "${DB_SCRIPTS_DIR}/idfc_primesquare_workflow_ddl_dml.sql" -u ${DB_USER} -p${DB_PASS} || { echo "Failed to execute primesquare_workflow_ddl_dml.sql"; exit 1; }
