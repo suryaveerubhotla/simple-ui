@@ -63,6 +63,7 @@ pipelines:
                               echo "File not downloaded: /home/ubuntu/ui-archive/#{BUILD_FILE}"
                               exit 1
                             fi
+                        run_if: passed
                    - exec:
                         command: ls
                         arguments:
