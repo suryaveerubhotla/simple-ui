@@ -52,10 +52,9 @@ pipelines:
                           - "-c"
                           - |
                             echo "Starting SFTP download..."
-                            sftp -o StrictHostKeyChecking=no -i /var/go/.ssh/id_rsa "#{SFTP_USER}"@"#{SFTP_HOST}" <<EOF
-                            cd /uploads
-                            ls
-                            get #{BUILD_FILE} /home/ubuntu/ui-archive/#{BUILD_FILE}
+                            sftp -o StrictHostKeyChecking=no -i /var/go/.ssh/id_rsa ${SFTP_USER}@${SFTP_HOST} <<EOF
+                            cd ${SFTP_UPLOADS_DIR}
+                            get ps_ui_*.zip /home/ubuntu/ui-archive/
                             bye
                             EOF
                             echo "SFTP download completed."
