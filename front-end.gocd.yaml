@@ -37,7 +37,7 @@ pipelines:
                       - |
                         echo "Step 1: Creating UI archive directory if not exists..."
                         if [ ! -d "/home/ubuntu/ui-archive" ]; then
-                          mkdir -p /home/ubuntu/ui-archive
+                        sudo mkdir -p /home/ubuntu/ui-archive
                           echo "Created directory /home/ubuntu/ui-archive"
                         else
                           echo "Directory /home/ubuntu/ui-archive already exists."
