@@ -31,8 +31,8 @@ pipelines:
                       - "-c"
                       - |
                         export BUILD_DIR=/home/ubuntu/builds
-                        export BE_TARGET_DIR=/home/ubuntu/prime-square
-                        export BE_ARCHIVE_DIR=/home/ubuntu/archive
+                        export UI_ARCHIVE_DIR=/home/ubuntu/archive
+                        export UI_TARGET_DIR=/var/www/html
                         export SERVICE=PrimeSquare.service
                         export DB_SCRIPTS_DIR=/home/ubuntu/prime-square/database-scripts
                         export DB_USER=psdbadmin
@@ -47,7 +47,7 @@ pipelines:
                         sudo chown ubuntu:ubuntu $UI_ARCHIVE_DIR $BUILD_DIR
 
                         echo "Fetch the latest file from SFTP by timestamp"
-                        LATEST_FILE=$(sftp -o StrictHostKeyChecking=no -i $SFTP_KEY "$SFTP_USER@$SFTP_HOST" <<EOF | grep ps_ui_ | head -n 1
+                        LATEST_FILE=$(sftp -o StrictHostKeyChecking=no -i $SFTP_KEY "$SFTP_USER@$SFTP_HOST" <<EOF | tail -n +2 | awk 'NR==1 {print $NF}'
                         cd $SFTP_UPLOADS_DIR
                         ls -t ps_ui_*.zip
                         bye
