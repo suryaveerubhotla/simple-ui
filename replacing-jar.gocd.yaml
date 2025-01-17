@@ -122,7 +122,7 @@ pipelines:
                             echo "BE_TARGET_DIR exists."
                           fi
 
-                          if ls "${BE_TARGET_DIR}/core-*.jar" > /dev/null 2>&1; then
+                          if ls "${BE_TARGET_DIR}/*.jar" > /dev/null 2>&1; then
                             echo "Archiving existing JAR file(s)..."
                             sudo mv "${BE_TARGET_DIR}"/* "${BACKUP_DIR}/" || { echo "Failed to archive core JAR"; exit 1; }
                           else
