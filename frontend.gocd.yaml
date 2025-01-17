@@ -51,12 +51,18 @@ pipelines:
                         arguments:
                           - "-c"
                           - |
+                            echo "Starting SFTP download..."
                             sftp -o StrictHostKeyChecking=no -i /var/go/.ssh/id_rsa "#{SFTP_USER}"@"#{SFTP_HOST}" <<EOF
-                            ls /uploads
-                            get /uploads/#{BUILD_FILE} /home/ubuntu/ui-archive/#{BUILD_FILE}
+                            cd /uploads
+                            ls
+                            get #{BUILD_FILE} /home/ubuntu/ui-archive/#{BUILD_FILE}
                             bye
                             EOF
-                        run_if: passed
+                            echo "SFTP download completed."
+                            if [ ! -f "/home/ubuntu/ui-archive/#{BUILD_FILE}" ]; then
+                              echo "File not downloaded: /home/ubuntu/ui-archive/#{BUILD_FILE}"
+                              exit 1
+                            fi
                    - exec:
                         command: ls
                         arguments:
