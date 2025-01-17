@@ -58,15 +58,21 @@ pipelines:
                           echo "No existing ps_be_*.zip files found. Proceeding..."
                         fi
 
-                        echo "Accessing SFTP machine to fetch the backend zip file..."
+                        echo "Accessing SFTP machine to fetch the latest backend zip file..."
                         sftp -o StrictHostKeyChecking=no -i "${SFTP_KEY}" "${SFTP_USER}@${SFTP_HOST}" <<EOF
                         cd ${SFTP_UPLOADS_DIR}
-                        get ps_be_*.zip ${BUILD_DIR}
+                        latest_file=$(ls -t ps_be_*.zip | head -n 1)
+                        if [ -z "$latest_file" ]; then
+                          echo "No ps_be_*.zip file found on SFTP server. Exiting."
+                          exit 1
+                        fi
+                        echo "Fetching latest file: $latest_file"
+                        get "$latest_file" ${BUILD_DIR}
                         bye
                         EOF
 
                         if [ $? -ne 0 ]; then
-                          echo "Failed to fetch backend.zip from SFTP."
+                          echo "Failed to fetch the latest backend.zip from SFTP."
                           exit 1
                         fi
 
@@ -156,7 +162,7 @@ pipelines:
 
                         echo "Reloading systemd daemon..."
                         sudo systemctl daemon-reload || { echo "Failed to reload systemd daemon"; exit 1; }
-                        
+
                         echo "Enabling the service..."
                         sudo systemctl enable ${SERVICE} || { echo "Failed to enable ${SERVICE}"; exit 1; }
 
