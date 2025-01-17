@@ -4,81 +4,113 @@ pipelines:
     group: deployment-group
     label_template: ${COUNT}
     lock_behavior: none
-    display_order: 2
+    display_order: -1
     materials:
-      git-frontend:
-        git: https://github.com/suryaveerubhotla/simple-ui.git
+      git-505a42e:
+        git: "#{REPO_URL}"
         shallow_clone: false
         auto_update: true
         branch: main
+    parameters:
+      TARGET_HOST: 172.16.7.112
+      BUILD_FILE: ps_ui_1.1.26_idfc_1.1.13-868acb3-344.zip
+      REPO_URL: https://github.com/suryaveerubhotla/simple-ui.git
+      SFTP_USER: surya
+      SFTP_HOST: 172.16.7.116
     stages:
-      - Deploy-Frontend:
+      - Stage1:
           fetch_materials: true
           keep_artifacts: false
           clean_workspace: false
           approval:
             type: manual
+            allow_only_on_success: false
           jobs:
-            run-commands:
-              timeout: 0
-              variables:
-                BUILD_DIR: /home/ubuntu/builds
-                UI_TARGET_DIR: /var/www/html
-                UI_ARCHIVE_DIR: /home/ubuntu/ui-archive
-                UI_TEMP_DIR: ${UI_ARCHIVE_DIR}/temp-extract
-              tasks:
-                - exec:
-                    command: /bin/bash
-                    arguments:
-                      - -c
-                      - |
-                        echo "Exporting environment variables..."
-                        export BUILD_DIR=/home/ubuntu/builds
-                        export UI_TARGET_DIR=/var/www/html
-                        export UI_ARCHIVE_DIR=/home/ubuntu/ui-archive
-                        export UI_TEMP_DIR=${UI_ARCHIVE_DIR}/temp-extract
-                        export SERVICE=PrimeSquare.service
-                        echo "Processing frontend (ps_ui)..."
-                        UI_ZIP=$(ls ${BUILD_DIR}/ps_ui*.zip 2>/dev/null | head -n 1)
-
-                        if [ -z "${UI_ZIP}" ]; then
-                          echo "No ps_ui zip file found in ${BUILD_DIR}!"
-                          exit 1
-                        fi
-
-                        echo "Found frontend zip: ${UI_ZIP}"
-
-                        mkdir -p "${UI_TEMP_DIR}" "${UI_ARCHIVE_DIR}" || { echo "Failed to create UI directories"; exit 1; }
-                        unzip -o "${UI_ZIP}" -d "${UI_TEMP_DIR}" || { echo "Failed to unzip ps_ui"; exit 1; }
-
-                        echo "Granting temporary permissions to ${UI_TARGET_DIR}..."
-                        sudo chmod -R 777 "${UI_TARGET_DIR}" || { echo "Failed to grant permissions"; exit 1; }
-
-                        echo "Replacing files in ${UI_TARGET_DIR}..."
-                        sudo mkdir -p "${UI_TARGET_DIR}" || { echo "Failed to create ${UI_TARGET_DIR}"; exit 1; }
-                        sudo rm -rf "${UI_TARGET_DIR}"/* || { echo "Failed to clean ${UI_TARGET_DIR}"; exit 1; }
-                        sudo cp -r "${UI_TEMP_DIR}"/* "${UI_TARGET_DIR}" || { echo "Failed to copy UI files"; exit 1; }
-
-                        echo "Reverting permissions of ${UI_TARGET_DIR}..."
-                        sudo chmod -R 755 "${UI_TARGET_DIR}" || { echo "Failed to revert permissions"; exit 1; }
-
-                        rm -rf "${UI_TEMP_DIR}" || { echo "Failed to clean up UI temp dir"; exit 1; }
-
-                        echo "Stopping Apache service..."
-                        sudo systemctl stop apache2.service || { echo "Failed to stop Apache service"; exit 1; }
-
-                        echo "Starting Apache service..."
-                        sudo systemctl start apache2.service || { echo "Failed to start Apache service"; exit 1; }
-
-                        echo "Checking Apache service status..."
-                        sudo systemctl status apache2.service || { echo "Failed to check Apache service status"; exit 1; }
-
-                        echo "frontend deployment complete."
-              resources:
-                - ubuntu
-              environment_variables:
-                GOCD_ENVIRONMENT: Frontandbackend
-environments:
-  Frontandbackend:
-    pipelines:
-      - frontend-deployment
+            Job1:
+                resources:
+                  - ubuntu
+                timeout: 0
+                tasks:
+                   - exec:
+                        command: bash
+                        arguments:
+                          - "-c"
+                          - |
+                            if [ ! -d "/home/ubuntu/archive" ]; then
+                              sudo mkdir -p /home/ubuntu/archive
+                            else
+                              echo "Directory /home/ubuntu/archive already exists."
+                            fi
+                   - exec:
+                        command: sudo
+                        arguments:
+                          - "chown"
+                          - "go:go"
+                          - "/home/ubuntu/archive"
+                   - exec:
+                        command: bash
+                        arguments:
+                          - "-c"
+                          - |
+                            sftp -o StrictHostKeyChecking=no -i /var/go/.ssh/id_rsa "#{SFTP_USER}"@"#{SFTP_HOST}" <<EOF
+                            ls /uploads
+                            get /uploads/#{BUILD_FILE} /home/ubuntu/archive/#{BUILD_FILE}
+                            bye
+                            EOF
+                        run_if: passed
+                   - exec:
+                        command: ls
+                        arguments:
+                          - "-l"
+                          - "/home/ubuntu/archive"
+                   - exec:
+                        command: sudo
+                        arguments:
+                          - "chown"
+                          - "-R"
+                          - "ubuntu:ubuntu"
+                          - "/home/ubuntu/archive"
+                   - exec:
+                        command: "sudo"
+                        arguments:
+                          - "systemctl"
+                          - "stop"
+                          - "apache2"
+                   - exec:
+                        command: "bash"
+                        arguments:
+                          - "-c"
+                          - |
+                            if [ -d "/var/www/html/prime-square" ]; then
+                              sudo rm -rf /var/www/html/prime-square
+                            else
+                              echo "Directory /var/www/html/prime-square does not exist. Skipping removal."
+                            fi
+                   - exec:
+                        command: "sudo"
+                        arguments:
+                          - "unzip"
+                          - "/home/ubuntu/archive/#{BUILD_FILE}"
+                          - "-d"
+                          - "/var/www/html/"
+                   - exec:
+                        command: "sudo"
+                        arguments:
+                          - "sed"
+                          - "-i"
+                          - "s/https:\\/\\/ps-targethost:3804\\/prime-square/http:\\/\\/#{TARGET_HOST}\\/prime-square/g"
+                          - "/var/www/html/prime-square/main.e1f206db06620922.js"
+                   - exec:
+                        command: "sudo"
+                        arguments:
+                          - "sed"
+                          - "-i"
+                          - "s/https:\\/\\/ps-targethost:3804\\/prime-square/http:\\/\\/#{TARGET_HOST}\\/prime-square/g"
+                          - "/var/www/html/prime-square/assets/environment/environment.json"
+                   - exec:
+                        command: "sudo"
+                        arguments:
+                          - "systemctl"
+                          - "start"
+                          - "apache2.service"
+ 
