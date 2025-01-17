@@ -1,0 +1,118 @@
+format_version: 10
+pipelines:
+  frontend-deployment:
+    group: deployment-group
+    label_template: ${COUNT}
+    lock_behavior: none
+    display_order: -1
+    materials:
+      git-505a42e:
+        git: https://github.com/suryaveerubhotla/simple-ui.git
+        shallow_clone: false
+        auto_update: true
+        branch: main
+    parameters:
+      TARGET_HOST: 172.16.7.112
+      BUILD_FILE: ps_ui_1.1.26_idfc_1.1.13-868acb3-344.zip
+      SFTP_USER: sftpuser
+      SFTP_HOST: 172.16.7.116
+    stages:
+      - Stage1:
+          fetch_materials: true
+          keep_artifacts: false
+          clean_workspace: false
+          approval:
+            type: manual
+            allow_only_on_success: false
+          jobs:
+            Job1:
+                resources:
+                  - ubuntu
+                timeout: 0
+                tasks:
+                   - exec:
+                        command: bash
+                        arguments:
+                          - "-c"
+                          - |
+                            if [ ! -d "/home/ubuntu/ui-archive" ]; then
+                              sudo mkdir -p /home/ubuntu/ui-archive
+                            else
+                              echo "Directory /home/ubuntu/ui-archive already exists."
+                            fi
+                   - exec:
+                        command: sudo
+                        arguments:
+                          - "chown"
+                          - "go:go"
+                          - "/home/ubuntu/ui-archive"
+                   - exec:
+                        command: bash
+                        arguments:
+                          - "-c"
+                          - |
+                            sftp -o StrictHostKeyChecking=no -i /var/go/.ssh/id_rsa "#{SFTP_USER}"@"#{SFTP_HOST}" <<EOF
+                            ls /uploads
+                            get /uploads/#{BUILD_FILE} /home/ubuntu/ui-archive/#{BUILD_FILE}
+                            bye
+                            EOF
+                        run_if: passed
+                   - exec:
+                        command: ls
+                        arguments:
+                          - "-l"
+                          - "/home/ubuntu/ui-archive"
+                   - exec:
+                        command: sudo
+                        arguments:
+                          - "chown"
+                          - "-R"
+                          - "ubuntu:ubuntu"
+                          - "/home/ubuntu/ui-archive"
+                   - exec:
+                        command: "sudo"
+                        arguments:
+                          - "systemctl"
+                          - "stop"
+                          - "apache2"
+                   - exec:
+                        command: "bash"
+                        arguments:
+                          - "-c"
+                          - |
+                            if [ -d "/var/www/html/prime-square" ]; then
+                              sudo rm -rf /var/www/html/prime-square
+                            else
+                              echo "Directory /var/www/html/prime-square does not exist. Skipping removal."
+                            fi
+                   - exec:
+                        command: "sudo"
+                        arguments:
+                          - "unzip"
+                          - "/home/ubuntu/ui-archive/#{BUILD_FILE}"
+                          - "-d"
+                          - "/var/www/html/"
+                   - exec:
+                        command: "sudo"
+                        arguments:
+                          - "sed"
+                          - "-i"
+                          - 's/https:\\/\\/ps-targethost:3804\\/prime-square/http:\\/\\/#{TARGET_HOST}\\/prime-square/g'
+                          - "/var/www/html/prime-square/main.e1f206db06620922.js"
+                   - exec:
+                        command: "sudo"
+                        arguments:
+                          - "sed"
+                          - "-i"
+                          - 's/https:\\/\\/ps-targethost:3804\\/prime-square/http:\\/\\/#{TARGET_HOST}\\/prime-square/g'
+                          - "/var/www/html/prime-square/assets/environment/environment.json"
+                   - exec:
+                        command: "sudo"
+                        arguments:
+                          - "systemctl"
+                          - "start"
+                          - "apache2.service"
+environments:
+  Frontandbackend:
+    pipelines:
+      - frontend-deployment
