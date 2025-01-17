@@ -91,6 +91,14 @@ pipelines:
                           echo "BE_ARCHIVE_DIR exists. Using existing ${BE_ARCHIVE_DIR}..."
                         fi
 
+                        echo "Checking for BACKUP_DIR"
+                        if [ ! -d "${BACKUP_DIR}" ]; then
+                          echo "BACKUP_DIR does not exist. Creating ${BACKUP_DIR}..."
+                          mkdir -p "${BACKUP_DIR}" || { echo "Failed to create ${BACKUP_DIR}"; exit 1; }
+                        else
+                          echo "BACKUP_DIR exists. Using existing ${BACKUP_DIR}..."
+                        fi
+
                         echo "Checking for backend (ps_be)..."
                         BE_ZIP=$(ls ${BUILD_DIR}/ps_be*.zip 2>/dev/null | head -n 1)
                         if [ -z "${BE_ZIP}" ]; then
@@ -109,7 +117,7 @@ pipelines:
 
                           if ls "${BE_TARGET_DIR}/core-*.jar" > /dev/null 2>&1; then
                             echo "Archiving existing JAR file(s)..."
-                            sudo mv "${BE_TARGET_DIR}/core-*.jar" "${BACKUP_DIR}/core-$(date +%F-%T).jar" || { echo "Failed to archive core JAR"; exit 1; }
+                            sudo mv "${BE_TARGET_DIR}/*" "${BACKUP_DIR}/" || { echo "Failed to archive core JAR"; exit 1; }
                           else
                             echo "No existing core-*.jar file found to archive."
                           fi
@@ -118,7 +126,7 @@ pipelines:
                           sudo cp "${JAR_FILE}" "${BE_TARGET_DIR}" || { echo "Failed to copy JAR file"; exit 1; }
 
                           echo "Cleaning up BE_ARCHIVE_DIR..."
-                          rm -rf "${BE_ARCHIVE_DIR}" || { echo "Failed to clean up BE_ARCHIVE_DIR"; exit 1; }
+                          sudo rm -rf "${BE_ARCHIVE_DIR}" || { echo "Failed to clean up BE_ARCHIVE_DIR"; exit 1; }
                         fi
 
                         echo "Listing files in BE_TARGET_DIR..."
