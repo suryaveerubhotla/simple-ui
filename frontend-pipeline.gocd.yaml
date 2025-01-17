@@ -23,19 +23,6 @@ pipelines:
             Job1:
               resources:
                 - ubuntu
-              environment_variables:
-                BUILD_DIR: /home/ubuntu/builds
-                UI_ARCHIVE_DIR: /home/ubuntu/ui-archive
-                UI_TARGET_DIR: /var/www/html
-                SERVICE: PrimeSquare.service
-                DB_SCRIPTS_DIR: /home/ubuntu/prime-square/database-scripts
-                DB_USER: psdbadmin
-                DB_PASS: 6%EOm@Te1sb19Th6
-                SFTP_HOST: 172.16.7.116
-                SFTP_USER: surya
-                SFTP_KEY: /var/go/.ssh/id_rsa
-                SFTP_UPLOADS_DIR: uploads
-                TARGET_HOST: 172.16.7.112
               timeout: 0
               tasks:
                 - exec:
@@ -43,14 +30,26 @@ pipelines:
                     arguments:
                       - "-c"
                       - |
+                        export BUILD_DIR=/home/ubuntu/builds
+                        export BE_TARGET_DIR=/home/ubuntu/prime-square
+                        export BE_ARCHIVE_DIR=/home/ubuntu/archive
+                        export SERVICE=PrimeSquare.service
+                        export DB_SCRIPTS_DIR=/home/ubuntu/prime-square/database-scripts
+                        export DB_USER=psdbadmin
+                        export DB_PASS=6%EOm@Te1sb19Th6
+                        export SFTP_HOST=172.16.7.116
+                        export SFTP_USER=surya
+                        export SFTP_KEY=/var/go/.ssh/id_rsa
+                        export SFTP_UPLOADS_DIR=uploads
+
                         echo "Ensure directories exist"
                         sudo mkdir -p $UI_ARCHIVE_DIR $BUILD_DIR
                         sudo chown ubuntu:ubuntu $UI_ARCHIVE_DIR $BUILD_DIR
 
                         echo "Fetch the latest file from SFTP by timestamp"
-                        LATEST_FILE=$(sftp -o StrictHostKeyChecking=no -i $SFTP_KEY "$SFTP_USER@$SFTP_HOST" <<EOF
+                        LATEST_FILE=$(sftp -o StrictHostKeyChecking=no -i $SFTP_KEY "$SFTP_USER@$SFTP_HOST" <<EOF | grep ps_ui_ | head -n 1
                         cd $SFTP_UPLOADS_DIR
-                        ls -t ps_ui_*.zip | head -n 1
+                        ls -t ps_ui_*.zip
                         bye
                         EOF
                         )
@@ -61,16 +60,26 @@ pipelines:
                         fi
 
                         echo "Latest file is: $LATEST_FILE"
+
+                        echo "Download the latest file"
                         sftp -o StrictHostKeyChecking=no -i $SFTP_KEY "$SFTP_USER@$SFTP_HOST" <<EOF
                         cd $SFTP_UPLOADS_DIR
                         get "$LATEST_FILE" "$BUILD_DIR/$LATEST_FILE"
                         bye
                         EOF
 
+                        echo "Verify the file exists"
+                        if [ ! -f "$BUILD_DIR/$LATEST_FILE" ]; then
+                          echo "Download failed or file not found: $BUILD_DIR/$LATEST_FILE"
+                          exit 1
+                        fi
+
                         echo "Downloaded $LATEST_FILE to $BUILD_DIR"
 
-                        echo "Extract and deploy the UI build"
+                        echo "Stop Apache"
                         sudo systemctl stop apache2
+
+                        echo "Deploy the build"
                         if [ -d "$UI_TARGET_DIR" ]; then
                           sudo rm -rf $UI_TARGET_DIR
                         fi
