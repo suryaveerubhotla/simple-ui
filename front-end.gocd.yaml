@@ -1,0 +1,88 @@
+format_version: 10
+pipelines:
+  frontend:
+    group: deployment-group
+    label_template: ${COUNT}
+    lock_behavior: none
+    display_order: -1
+    materials:
+      git-repo:
+        git: "#{REPO_URL}"
+        shallow_clone: false
+        auto_update: true
+        branch: main
+    parameters:
+      TARGET_HOST: 172.16.7.112
+      BUILD_FILE: ps_ui_1.1.26_idfc_1.1.13-868acb3-344.zip
+      REPO_URL: https://github.com/suryaveerubhotla/simple-ui.git
+      SFTP_USER: sftpuser
+      SFTP_HOST: 172.16.7.116
+    stages:
+      - Deploy:
+          fetch_materials: true
+          keep_artifacts: false
+          clean_workspace: false
+          approval:
+            type: manual
+          jobs:
+            DeployUI:
+              resources:
+                - ubuntu
+              timeout: 0
+              tasks:
+                - exec:
+                    command: bash
+                    arguments:
+                      - "-c"
+                      - |
+                        echo "Step 1: Creating UI archive directory if not exists..."
+                        if [ ! -d "/home/ubuntu/ui-archive" ]; then
+                          mkdir -p /home/ubuntu/ui-archive
+                          echo "Created directory /home/ubuntu/ui-archive"
+                        else
+                          echo "Directory /home/ubuntu/ui-archive already exists."
+                        fi
+                        
+                        echo "Step 2: Setting permissions and ownership for UI archive..."
+                        sudo chmod -R 775 /home/ubuntu/ui-archive
+                        sudo chown -R ubuntu:ubuntu /home/ubuntu/ui-archive
+                        
+                        echo "Step 3: Fetching UI build from SFTP server..."
+                        sftp -o StrictHostKeyChecking=no -i /var/go/.ssh/id_rsa "#{SFTP_USER}"@"#{SFTP_HOST}" <<EOF
+                        cd /uploads
+                        get "#{BUILD_FILE}" /home/ubuntu/ui-archive/#{BUILD_FILE}
+                        bye
+                        EOF
+
+                        echo "Step 4: Listing contents of UI archive..."
+                        ls -l /home/ubuntu/ui-archive
+
+                        echo "Step 5: Ensuring ownership is set for UI archive..."
+                        sudo chown -R ubuntu:ubuntu /home/ubuntu/ui-archive
+
+                        echo "Step 6: Stopping Apache2 service..."
+                        sudo systemctl stop apache2
+
+                        echo "Step 7: Removing existing files in /var/www/html/prime-square..."
+                        if [ -d "/var/www/html/prime-square" ]; then
+                          sudo rm -rf /var/www/html/prime-square
+                          echo "Removed existing files in /var/www/html/prime-square"
+                        else
+                          echo "Directory /var/www/html/prime-square does not exist. Skipping removal."
+                        fi
+
+                        echo "Step 8: Unzipping the UI build into target directory..."
+                        sudo unzip /home/ubuntu/ui-archive/#{BUILD_FILE} -d /var/www/html/
+
+                        echo "Step 9: Replacing target host using sed..."
+                        sudo sed -i 's|https://ps-targethost:3804/prime-square|http://#{TARGET_HOST}/prime-square|g' /var/www/html/prime-square/main.e1f206db06620922.js
+                        sudo sed -i 's|https://ps-targethost:3804/prime-square|http://#{TARGET_HOST}/prime-square|g' /var/www/html/prime-square/assets/environment/environment.json
+
+                        echo "Step 10: Starting Apache2 service..."
+                        sudo systemctl start apache2
+                        
+                        echo "Frontend deployment completed successfully."
+environments:
+  Frontandbackend:
+    pipelines:
+      - frontend
