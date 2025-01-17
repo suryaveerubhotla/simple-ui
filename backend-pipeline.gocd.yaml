@@ -102,7 +102,7 @@ pipelines:
                         sudo ls -l "${BE_TARGET_DIR}"
 
                         echo "Checking and copying service file if needed..."
-                        if [ ! -f /etc/systemd/system/${SERVICE} ]; then
+                        if [ ! -f /etc/systemd/system/${SERVICE}]; then
                           sudo cp "${BE_TARGET_DIR}/service/${SERVICE}" /etc/systemd/system/ || { echo "Failed to copy service file"; exit 1; }
 
                           echo "Enabling the service..."
@@ -118,14 +118,15 @@ pipelines:
                         sudo systemctl daemon-reload || { echo "Failed to reload systemd daemon"; exit 1; }
 
                         echo "Giving execute permissions to database scripts..."
-                        sudo chmod -R +x "${DB_SCRIPTS_DIR}" || { echo "Failed to give execute permissions to database scripts"; exit 1; }
+                        sudo chown -R go:go "${DB_SCRIPTS_DIR}" || { echo "Failed to change ownership of DB_SCRIPTS_DIR"; exit 1; }
+                        sudo chmod -R 775 "${DB_SCRIPTS_DIR}" || { echo "Failed to give execute permissions to database scripts"; exit 1; }
 
                         echo "Executing database scripts..."
-                        sudo mysql < "${DB_SCRIPTS_DIR}/ddl_drop_schema_script.sql" -u ${DB_USER} -p${DB_PASS} || { echo "Failed to execute ddl_drop_schema_script.sql"; exit 1; }
-                        sudo mysql < "${DB_SCRIPTS_DIR}/idfc_primesquare_workflow_ddl_dml.sql" -u ${DB_USER} -p${DB_PASS} || { echo "Failed to execute primesquare_workflow_ddl_dml.sql"; exit 1; }
-                        sudo mysql < "${DB_SCRIPTS_DIR}/ddl_create_scripts.sql" -u ${DB_USER} -p${DB_PASS} || { echo "Failed to execute ddl_create_scripts.sql"; exit 1; }
-                        sudo mysql < "${DB_SCRIPTS_DIR}/dml_insert_scripts.sql" -u ${DB_USER} -p${DB_PASS} || { echo "Failed to execute dml_insert_scripts.sql"; exit 1; }
-                        sudo mysql < "${DB_SCRIPTS_DIR}/ps_index_create.sql" -u ${DB_USER} -p${DB_PASS} || { echo "Failed to execute ps_index_create.sql"; exit 1; }
+                        sudo -u go mysql < "${DB_SCRIPTS_DIR}/ddl_drop_schema_script.sql" -u ${DB_USER} -p${DB_PASS} || { echo "Failed to execute ddl_drop_schema_script.sql"; exit 1; }
+                        sudo -u go mysql < "${DB_SCRIPTS_DIR}/idfc_primesquare_workflow_ddl_dml.sql" -u ${DB_USER} -p${DB_PASS} || { echo "Failed to execute primesquare_workflow_ddl_dml.sql"; exit 1; }
+                        sudo -u go mysql < "${DB_SCRIPTS_DIR}/ddl_create_scripts.sql" -u ${DB_USER} -p${DB_PASS} || { echo "Failed to execute ddl_create_scripts.sql"; exit 1; }
+                        sudo -u go mysql < "${DB_SCRIPTS_DIR}/dml_insert_scripts.sql" -u ${DB_USER} -p${DB_PASS} || { echo "Failed to execute dml_insert_scripts.sql"; exit 1; }
+                        sudo -u go mysql < "${DB_SCRIPTS_DIR}/ps_index_create.sql" -u ${DB_USER} -p${DB_PASS} || { echo "Failed to execute ps_index_create.sql"; exit 1; }
 
                         echo "Starting service..."
                         sudo systemctl start ${SERVICE} || { echo "Failed to start ${SERVICE}"; exit 1; }
