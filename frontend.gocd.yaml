@@ -14,7 +14,7 @@ pipelines:
     parameters:
       TARGET_HOST: 172.16.7.112
       BUILD_FILE: ps_ui_1.1.26_idfc_1.1.13-868acb3-344.zip
-      SFTP_USER: sftpuser
+      SFTP_USER: surya
       SFTP_HOST: 172.16.7.116
     stages:
       - Stage1:
