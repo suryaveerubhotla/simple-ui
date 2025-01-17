@@ -62,7 +62,7 @@ pipelines:
                           echo "BUILD_DIR exists. Using existing ${BUILD_DIR}..."
                         fi
                         sudo chmod -R 775 "${BUILD_DIR}" || { echo "Failed to set permissions for BUILD_DIR"; exit 1; }
-                        sudo chown -R go:go "${BUILD_DIR}" || { echo "Failed to change ownership of BUILD_DIR"; exit 1; }
+                        sudo chown -R ubuntu:ubuntu "${BUILD_DIR}" || { echo "Failed to change ownership of BUILD_DIR"; exit 1; }
 
                         echo "Checking for existing ps_be_*.zip files in BUILD_DIR..."
                         if ls "${BUILD_DIR}/ps_be_*.zip" > /dev/null 2>&1; then
@@ -92,7 +92,7 @@ pipelines:
                         fi
 
                         echo "Changing permissions of BE_TARGET_DIR to go:go..."
-                        sudo chown -R go:go "${BE_TARGET_DIR}" || { echo "Failed to change permissions of BE_TARGET_DIR"; exit 1; }
+                        sudo chown -R ubuntu:ubuntu "${BE_TARGET_DIR}" || { echo "Failed to change permissions of BE_TARGET_DIR"; exit 1; }
 
                         echo "Unzipping the backend artifacts to BE_TARGET_DIR..."
                         sudo unzip -o "${BUILD_DIR}/ps_be_*.zip" -d "${BE_TARGET_DIR}" || { echo "Failed to unzip backend.zip"; exit 1; }
