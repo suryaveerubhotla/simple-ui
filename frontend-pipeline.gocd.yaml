@@ -121,14 +121,14 @@ pipelines:
                     arguments:
                       - "sed"
                       - "-i"
-                      - "s/https:\/\/ps-targethost:3804\/prime-square/http:\/\/${TARGET_HOST}\/prime-square/g"
+                      - 's/https:\/\/ps-targethost:3804\/prime-square/http:\/\/${TARGET_HOST}\/prime-square/g'
                       - "$BE_TARGET_DIR/main.e1f206db06620922.js"
                 - exec:
                     command: sudo
                     arguments:
                       - "sed"
                       - "-i"
-                      - "s/https:\/\/ps-targethost:3804\/prime-square/http:\/\/${TARGET_HOST}\/prime-square/g"
+                      - 's/https:\/\/ps-targethost:3804\/prime-square/http:\/\/${TARGET_HOST}\/prime-square/g'
                       - "$BE_TARGET_DIR/assets/environment/environment.json"
                 - exec:
                     command: sudo
