@@ -73,7 +73,7 @@ pipelines:
                         fi
 
                         echo "Accessing SFTP machine to fetch the backend zip file..."
-                        sftp -o StrictHostKeyChecking=no -i /var/go/.ssh/id_rsa ${SFTP_USER}@${SFTP_HOST} <<EOF
+                        sudo -u go sftp -o StrictHostKeyChecking=no -i /var/go/.ssh/id_rsa ${SFTP_USER}@${SFTP_HOST} <<EOF
                         cd ${SFTP_UPLOADS_DIR}
                         get ps_be_*.zip ${BUILD_DIR}/
                         bye
