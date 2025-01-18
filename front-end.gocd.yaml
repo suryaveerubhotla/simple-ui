@@ -81,9 +81,9 @@ pipelines:
               resources:
                 - ubuntu
               environment_variables:
-                GOCD_ENVIRONMENT: Frontendandbackend
+                GOCD_ENVIRONMENT: Frontandbackend
 
 environments:
-  Frontendandbackend:
+  Frontandbackend:
     pipelines:
       - frontend
