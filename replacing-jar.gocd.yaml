@@ -41,7 +41,7 @@ pipelines:
                         export SFTP_USER=surya
                         export SFTP_KEY=/var/go/.ssh/id_rsa
                         export SFTP_UPLOADS_DIR=uploads
-                        export BUILD_FILE=ps_be_1.1.26_idfc_1.1.13-8b07db6-319.zip
+                        export BUILD_FILE=ps_be_1.1.25_idfc_1.1.12-09090bd-283.zip
 
                         echo "Checking and creating BUILD_DIR if needed..."
                         if [ ! -d "${BUILD_DIR}" ]; then
