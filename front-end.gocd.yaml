@@ -4,19 +4,13 @@ pipelines:
     group: deployment-group
     label_template: ${COUNT}
     lock_behavior: none
-    display_order: -1
+    display_order: 2
     materials:
-      git-repo:
-        git: "#{REPO_URL}"
+      git-frontend:
+        git: https://github.com/suryaveerubhotla/simple-ui.git
         shallow_clone: false
         auto_update: true
         branch: main
-    parameters:
-      TARGET_HOST: 192.168.56.105
-      BUILD_FILE: ps_ui_1.1.26_idfc_1.1.13-868acb3-344.zip
-      REPO_URL: https://github.com/suryaveerubhotla/simple-ui.git
-      SFTP_USER: surya
-      SFTP_HOST: 192.168.56.106
     stages:
       - Deploy:
           fetch_materials: true
@@ -25,97 +19,71 @@ pipelines:
           approval:
             type: manual
           jobs:
-            DeployUI:
-              resources:
-                - ubuntu
+            run-commands:
               timeout: 0
               tasks:
                 - exec:
-                    command: bash
+                    command: /bin/bash
                     arguments:
-                      - "-c"
+                      - -c
                       - |
-                        echo "Step 1: Creating UI archive directory if not exists..."
-                        if [ ! -d "/home/ubuntu/ui-archive" ]; then
-                          sudo mkdir -p /home/ubuntu/ui-archive
-                          echo "Created directory /home/ubuntu/ui-archive"
-                        else
-                          echo "Directory /home/ubuntu/ui-archive already exists."
-                        fi
-                        
-                        echo "Step 2: Setting permissions and ownership for UI archive..."
-                        sudo chmod -R 775 /home/ubuntu/ui-archive
-                        sudo chown -R ubuntu:ubuntu /home/ubuntu/ui-archive
-                        
-                        echo "Step 3: Validating presence of /uploads directory on SFTP server..."
-                        ssh -o StrictHostKeyChecking=no -i /var/go/.ssh/id_rsa "#{SFTP_USER}"@"#{SFTP_HOST}" <<EOF
-                        if [ ! -d "/uploads" ]; then
-                          echo "Error: Directory /uploads does not exist on the SFTP server."
-                          exit 1
-                        fi
-                        exit 0
-                        EOF
+                        echo "Exporting environment variables..."
+                        export UI_TARGET_DIR=/var/www/html
+                        export UI_ARCHIVE=/home/ubuntu/ui-archive
+                        export SERVICE=PrimeSquare.service
+                        export SFTP_HOST=192.168.56.106
+                        export SFTP_USER=surya
+                        export SFTP_KEY=/var/go/.ssh/id_rsa
+                        export SFTP_UPLOADS_DIR=uploads
+                        export BUILD_FILE=ps_ui_1.1.26_idfc_1.1.13-868acb3-344.zip
 
-                        if [ $? -ne 0 ]; then
-                          echo "Error: Validation of /uploads directory on SFTP server failed."
-                          exit 1
+                        echo "Creating UI_ARCHIVE directory if it doesn't exist..."
+                        if [ ! -d "${UI_ARCHIVE}" ]; then
+                          sudo mkdir -p "${UI_ARCHIVE}" || { echo "Failed to create UI_ARCHIVE directory"; exit 1; }
+                        else
+                          echo "UI_ARCHIVE directory already exists."
                         fi
-                        
-                        echo "Step 4: Fetching UI build from SFTP server..."
-                        sftp -o StrictHostKeyChecking=no -i /var/go/.ssh/id_rsa "#{SFTP_USER}"@"#{SFTP_HOST}" <<EOF
-                        cd /uploads
-                        get "#{BUILD_FILE}" /home/ubuntu/ui-archive/#{BUILD_FILE}
+
+                        sudo chmod -R 775 "${UI_ARCHIVE}" || { echo "Failed to set permissions for UI_ARCHIVE"; exit 1; }
+                        sudo chown -R ubuntu:ubuntu "${UI_ARCHIVE}" || { echo "Failed to set ownership for UI_ARCHIVE"; exit 1; }
+
+                        echo "Fetching UI build from SFTP server..."
+                        sudo -u go sftp -o StrictHostKeyChecking=no -i ${SFTP_KEY} ${SFTP_USER}@${SFTP_HOST} <<EOF
+                        cd ${SFTP_UPLOADS_DIR}
+                        get ${BUILD_FILE} ${UI_ARCHIVE}/
                         bye
                         EOF
-
-                        if [ ! -f "/home/ubuntu/ui-archive/#{BUILD_FILE}" ]; then
-                          echo "Error: File #{BUILD_FILE} not found in UI archive directory."
+                        if [ $? -ne 0 ]; then
+                          echo "Failed to fetch the UI build from SFTP."
                           exit 1
                         fi
 
-                        echo "Step 5: Listing contents of UI archive..."
-                        ls -l /home/ubuntu/ui-archive
+                        echo "Listing contents of UI_ARCHIVE..."
+                        ls -l "${UI_ARCHIVE}"
 
-                        echo "Step 6: Ensuring ownership is set for UI archive..."
-                        sudo chown -R ubuntu:ubuntu /home/ubuntu/ui-archive
+                        echo "Stopping Apache2 service..."
+                        sudo systemctl stop apache2 || { echo "Failed to stop Apache2"; exit 1; }
 
-                        echo "Step 7: Stopping Apache2 service..."
-                        sudo systemctl stop apache2
+                        echo "Removing existing UI_TARGET_DIR..."
+                        sudo rm -rf "${UI_TARGET_DIR}" || { echo "Failed to remove UI_TARGET_DIR"; exit 1; }
 
-                        echo "Step 8: Removing existing files in /var/www/html/prime-square..."
-                        if [ -d "/var/www/html/prime-square" ]; then
-                          sudo rm -rf /var/www/html/prime-square
-                          echo "Removed existing files in /var/www/html/prime-square"
-                        else
-                          echo "Directory /var/www/html/prime-square does not exist. Skipping removal."
-                        fi
+                        echo "Unzipping UI build to UI_TARGET_DIR..."
+                        sudo unzip -o "${UI_ARCHIVE}/${BUILD_FILE}" -d "${UI_TARGET_DIR}" || { echo "Failed to unzip UI build"; exit 1; }
 
-                        echo "Step 9: Unzipping the UI build into target directory..."
-                        if [ -f "/home/ubuntu/ui-archive/#{BUILD_FILE}" ]; then
-                          sudo unzip /home/ubuntu/ui-archive/#{BUILD_FILE} -d /var/www/html/
-                        else
-                          echo "Error: Unable to find the ZIP file to unzip."
-                          exit 1
-                        fi
+                        echo "Updating target host in configuration files..."
+                        sudo sed -i 's|https://ps-targethost:3804/prime-square|http://${TARGET_HOST}/prime-square|g' "${UI_TARGET_DIR}/prime-square/main.e1f206db06620922.js" || { echo "Failed to update main.js"; exit 1; }
+                        sudo sed -i 's|https://ps-targethost:3804/prime-square|http://${TARGET_HOST}/prime-square|g' "${UI_TARGET_DIR}/assets/environment/environment.json" || { echo "Failed to update environment.json"; exit 1; }
 
-                        echo "Step 10: Replacing target host using sed..."
-                        if [ -f "/var/www/html/prime-square/main.e1f206db06620922.js" ]; then
-                          sudo sed -i 's|https://ps-targethost:3804/prime-square|http://#{TARGET_HOST}/prime-square|g' /var/www/html/prime-square/main.e1f206db06620922.js
-                        else
-                          echo "Warning: File main.e1f206db06620922.js not found. Skipping sed operation."
-                        fi
+                        echo "Starting Apache2 service..."
+                        sudo systemctl start apache2 || { echo "Failed to start Apache2"; exit 1; }
 
-                        if [ -f "/var/www/html/prime-square/assets/environment/environment.json" ]; then
-                          sudo sed -i 's|https://ps-targethost:3804/prime-square|http://#{TARGET_HOST}/prime-square|g' /var/www/html/prime-square/assets/environment/environment.json
-                        else
-                          echo "Warning: File environment.json not found. Skipping sed operation."
-                        fi
+                        echo "Front-end deployment complete."
+              resources:
+                - ubuntu
+              environment_variables:
+                GOCD_ENVIRONMENT: Frontendandbackend
 
-                        echo "Step 11: Starting Apache2 service..."
-                        sudo systemctl start apache2
-                        
-                        echo "Frontend deployment completed successfully."
 environments:
-  Frontandbackend:
+  Frontendandbackend:
     pipelines:
       - frontend
