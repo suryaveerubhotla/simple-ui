@@ -64,26 +64,34 @@ pipelines:
                         sudo chmod -R 775 "${BUILD_DIR}" || { echo "Failed to set permissions for BUILD_DIR"; exit 1; }
                         sudo chown -R go:go "${BUILD_DIR}" || { echo "Failed to change ownership of BUILD_DIR"; exit 1; }
 
-                        echo "Checking for existing ps_be_*.zip files in BUILD_DIR..."
+                                                echo "Checking for existing ps_be_*.zip files in BUILD_DIR..."
                         if ls "${BUILD_DIR}/ps_be_*.zip" > /dev/null 2>&1; then
-                          echo "Found existing ps_be_*.zip files:"
-                          ls "${BUILD_DIR}/ps_be_*.zip"
-                          echo "Removing existing ps_be_*.zip files..."
-                          sudo rm -f "${BUILD_DIR}/ps_be_*.zip" || { echo "Failed to remove existing zip files"; exit 1; }
+                          echo "Found existing ps_be_*.zip files. Removing them..."
+                          sudo rm -f "${BUILD_DIR}/ps_be_*.zip" || { echo "Failed to remove old zip files"; exit 1; }
                         else
                           echo "No existing ps_be_*.zip files found. Proceeding..."
                         fi
 
                         echo "Accessing SFTP machine to fetch the latest backend zip file..."
-                        sudo -u go sftp -o StrictHostKeyChecking=no -i /var/go/.ssh/id_rsa ${SFTP_USER}@${SFTP_HOST} <<EOF
+                        sudo -u go sftp -o StrictHostKeyChecking=no -i ${SFTP_KEY} ${SFTP_USER}@${SFTP_HOST} <<EOF
                         cd ${SFTP_UPLOADS_DIR}
-                        get \$(ls -t ps_be_*.zip | head -1) ${BUILD_DIR}/
+                        latest_file=\$(ls -t ps_be_*.zip | head -n 1)
+                        if [ -n "\$latest_file" ]; then
+                          echo "Fetching latest file: \$latest_file"
+                          get "\$latest_file" ${BUILD_DIR}/
+                        else
+                          echo "No ps_be_*.zip files found on SFTP server. Exiting..."
+                          exit 1
+                        fi
                         bye
                         EOF
                         if [ $? -ne 0 ]; then
-                          echo "Failed to fetch backend.zip from SFTP."
+                          echo "Failed to fetch the latest ps_be_*.zip file from SFTP."
                           exit 1
                         fi
+
+                        echo "Latest backend zip file successfully fetched to BUILD_DIR."
+
 
                         echo "Checking and creating BE_TARGET_DIR if needed..."
                         if [ ! -d "${BE_TARGET_DIR}" ]; then
