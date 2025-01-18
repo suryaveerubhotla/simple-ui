@@ -66,21 +66,36 @@ pipelines:
 
                         echo "Checking for existing ps_be_*.zip files in BUILD_DIR..."
                         if ls "${BUILD_DIR}/ps_be_*.zip" > /dev/null 2>&1; then
-                          echo "Found existing ps_be_*.zip files. Removing them..."
-                          sudo rm -f "${BUILD_DIR}/ps_be_*.zip" || { echo "Failed to remove existing zip files"; exit 1; }
+                          echo "Found existing ps_be_*.zip files:"
+                          ls -l ${BUILD_DIR}/ps_be_*.zip
+                          echo "Removing existing zip files..."
+                          sudo rm -f ${BUILD_DIR}/ps_be_*.zip || { echo "Failed to remove existing zip files"; exit 1; }
                         else
-                          echo "No existing ps_be_*.zip files found. Proceeding..."
+                          echo "No existing ps_be_*.zip files found in BUILD_DIR. Proceeding..."
                         fi
 
-                        echo "Accessing SFTP machine to fetch the backend zip file..."
-                        sudo -u go sftp -o StrictHostKeyChecking=no -i /var/go/.ssh/id_rsa ${SFTP_USER}@${SFTP_HOST} <<EOF
+                        echo "Accessing SFTP machine to fetch the latest backend zip file..."
+                        latest_file=$(sudo -u go sftp -o StrictHostKeyChecking=no -i ${SFTP_KEY} ${SFTP_USER}@${SFTP_HOST} <<EOF
                         cd ${SFTP_UPLOADS_DIR}
-                        get ps_be_*.zip ${BUILD_DIR}/
+                        ls -t ps_be_*.zip | head -n 1
                         bye
                         EOF
-                        if [ $? -ne 0 ]; then
-                          echo "Failed to fetch backend.zip from SFTP."
+                        )
+
+                        if [ -z "${latest_file}" ]; then
+                          echo "No ps_be_*.zip files found on SFTP server."
                           exit 1
+                        else
+                          echo "Fetching the latest file ${latest_file} from SFTP..."
+                          sudo -u go sftp -o StrictHostKeyChecking=no -i ${SFTP_KEY} ${SFTP_USER}@${SFTP_HOST} <<EOF
+                          cd ${SFTP_UPLOADS_DIR}
+                          get ${latest_file} ${BUILD_DIR}/
+                          bye
+                          EOF
+                          if [ $? -ne 0 ]; then
+                            echo "Failed to fetch ${latest_file} from SFTP."
+                            exit 1
+                          fi
                         fi
 
                         echo "Checking and creating BE_TARGET_DIR if needed..."
