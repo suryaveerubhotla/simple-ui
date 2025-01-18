@@ -47,13 +47,23 @@ pipelines:
                         sudo chmod -R 775 /home/ubuntu/ui-archive
                         sudo chown -R ubuntu:ubuntu /home/ubuntu/ui-archive
                         
-                        echo "Step 3: Fetching UI build from SFTP server..."
-                        sftp -o StrictHostKeyChecking=no -i /var/go/.ssh/id_rsa "#{SFTP_USER}"@"#{SFTP_HOST}" <<EOF
-                        cd /uploads
-                        if [ $? -ne 0 ]; then
-                          echo "Error: Directory /uploads not found on the SFTP server."
+                        echo "Step 3: Validating presence of /uploads directory on SFTP server..."
+                        ssh -o StrictHostKeyChecking=no -i /var/go/.ssh/id_rsa "#{SFTP_USER}"@"#{SFTP_HOST}" <<EOF
+                        if [ ! -d "/uploads" ]; then
+                          echo "Error: Directory /uploads does not exist on the SFTP server."
                           exit 1
                         fi
+                        exit 0
+                        EOF
+
+                        if [ $? -ne 0 ]; then
+                          echo "Error: Validation of /uploads directory on SFTP server failed."
+                          exit 1
+                        fi
+                        
+                        echo "Step 4: Fetching UI build from SFTP server..."
+                        sftp -o StrictHostKeyChecking=no -i /var/go/.ssh/id_rsa "#{SFTP_USER}"@"#{SFTP_HOST}" <<EOF
+                        cd /uploads
                         get "#{BUILD_FILE}" /home/ubuntu/ui-archive/#{BUILD_FILE}
                         bye
                         EOF
@@ -63,16 +73,16 @@ pipelines:
                           exit 1
                         fi
 
-                        echo "Step 4: Listing contents of UI archive..."
+                        echo "Step 5: Listing contents of UI archive..."
                         ls -l /home/ubuntu/ui-archive
 
-                        echo "Step 5: Ensuring ownership is set for UI archive..."
+                        echo "Step 6: Ensuring ownership is set for UI archive..."
                         sudo chown -R ubuntu:ubuntu /home/ubuntu/ui-archive
 
-                        echo "Step 6: Stopping Apache2 service..."
+                        echo "Step 7: Stopping Apache2 service..."
                         sudo systemctl stop apache2
 
-                        echo "Step 7: Removing existing files in /var/www/html/prime-square..."
+                        echo "Step 8: Removing existing files in /var/www/html/prime-square..."
                         if [ -d "/var/www/html/prime-square" ]; then
                           sudo rm -rf /var/www/html/prime-square
                           echo "Removed existing files in /var/www/html/prime-square"
@@ -80,7 +90,7 @@ pipelines:
                           echo "Directory /var/www/html/prime-square does not exist. Skipping removal."
                         fi
 
-                        echo "Step 8: Unzipping the UI build into target directory..."
+                        echo "Step 9: Unzipping the UI build into target directory..."
                         if [ -f "/home/ubuntu/ui-archive/#{BUILD_FILE}" ]; then
                           sudo unzip /home/ubuntu/ui-archive/#{BUILD_FILE} -d /var/www/html/
                         else
@@ -88,7 +98,7 @@ pipelines:
                           exit 1
                         fi
 
-                        echo "Step 9: Replacing target host using sed..."
+                        echo "Step 10: Replacing target host using sed..."
                         if [ -f "/var/www/html/prime-square/main.e1f206db06620922.js" ]; then
                           sudo sed -i 's|https://ps-targethost:3804/prime-square|http://#{TARGET_HOST}/prime-square|g' /var/www/html/prime-square/main.e1f206db06620922.js
                         else
@@ -101,7 +111,7 @@ pipelines:
                           echo "Warning: File environment.json not found. Skipping sed operation."
                         fi
 
-                        echo "Step 10: Starting Apache2 service..."
+                        echo "Step 11: Starting Apache2 service..."
                         sudo systemctl start apache2
                         
                         echo "Frontend deployment completed successfully."
