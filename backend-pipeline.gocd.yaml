@@ -118,6 +118,8 @@ pipelines:
                         sudo systemctl daemon-reload || { echo "Failed to reload systemd daemon"; exit 1; }
 
                         echo "Setting permissions and ownership for database scripts..."
+                        sudo chmod 755 /home/ubuntu/prime-square/database-scripts
+                        sudo chown go:go /home/ubuntu/prime-square/database-scripts
                         sudo chmod 644 "${DB_SCRIPTS_DIR}"/*.sql || { echo "Failed to set permissions for database scripts"; exit 1; }
                         sudo chown go:go "${DB_SCRIPTS_DIR}"/*.sql || { echo "Failed to change ownership of database scripts"; exit 1; }
 
