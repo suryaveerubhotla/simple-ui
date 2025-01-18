@@ -94,7 +94,7 @@ pipelines:
                         echo "Checking for BE_ARCHIVE_DIR"
                         if [ ! -d "${BE_ARCHIVE_DIR}" ]; then
                           echo "BE_ARCHIVE_DIR does not exist. Creating ${BE_ARCHIVE_DIR}..."
-                          mkdir -p "${BE_ARCHIVE_DIR}" || { echo "Failed to create ${BE_ARCHIVE_DIR}"; exit 1; }
+                         sudo mkdir -p "${BE_ARCHIVE_DIR}" || { echo "Failed to create ${BE_ARCHIVE_DIR}"; exit 1; }
                         else
                           echo "BE_ARCHIVE_DIR exists. Using existing ${BE_ARCHIVE_DIR}..."
                         fi
@@ -102,7 +102,7 @@ pipelines:
                         echo "Checking for BACKUP_DIR"
                         if [ ! -d "${BACKUP_DIR}" ]; then
                           echo "BACKUP_DIR does not exist. Creating ${BACKUP_DIR}..."
-                          mkdir -p "${BACKUP_DIR}" || { echo "Failed to create ${BACKUP_DIR}"; exit 1; }
+                         sudo mkdir -p "${BACKUP_DIR}" || { echo "Failed to create ${BACKUP_DIR}"; exit 1; }
                         else
                           echo "BACKUP_DIR exists. Using existing ${BACKUP_DIR}..."
                         fi
