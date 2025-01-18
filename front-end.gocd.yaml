@@ -37,7 +37,7 @@ pipelines:
                       - |
                         echo "Step 1: Creating UI archive directory if not exists..."
                         if [ ! -d "/home/ubuntu/ui-archive" ]; then
-                        sudo mkdir -p /home/ubuntu/ui-archive
+                          sudo mkdir -p /home/ubuntu/ui-archive
                           echo "Created directory /home/ubuntu/ui-archive"
                         else
                           echo "Directory /home/ubuntu/ui-archive already exists."
@@ -50,9 +50,18 @@ pipelines:
                         echo "Step 3: Fetching UI build from SFTP server..."
                         sftp -o StrictHostKeyChecking=no -i /var/go/.ssh/id_rsa "#{SFTP_USER}"@"#{SFTP_HOST}" <<EOF
                         cd /uploads
+                        if [ $? -ne 0 ]; then
+                          echo "Error: Directory /uploads not found on the SFTP server."
+                          exit 1
+                        fi
                         get "#{BUILD_FILE}" /home/ubuntu/ui-archive/#{BUILD_FILE}
                         bye
                         EOF
+
+                        if [ ! -f "/home/ubuntu/ui-archive/#{BUILD_FILE}" ]; then
+                          echo "Error: File #{BUILD_FILE} not found in UI archive directory."
+                          exit 1
+                        fi
 
                         echo "Step 4: Listing contents of UI archive..."
                         ls -l /home/ubuntu/ui-archive
@@ -72,11 +81,25 @@ pipelines:
                         fi
 
                         echo "Step 8: Unzipping the UI build into target directory..."
-                        sudo unzip /home/ubuntu/ui-archive/#{BUILD_FILE} -d /var/www/html/
+                        if [ -f "/home/ubuntu/ui-archive/#{BUILD_FILE}" ]; then
+                          sudo unzip /home/ubuntu/ui-archive/#{BUILD_FILE} -d /var/www/html/
+                        else
+                          echo "Error: Unable to find the ZIP file to unzip."
+                          exit 1
+                        fi
 
                         echo "Step 9: Replacing target host using sed..."
-                        sudo sed -i 's|https://ps-targethost:3804/prime-square|http://#{TARGET_HOST}/prime-square|g' /var/www/html/prime-square/main.e1f206db06620922.js
-                        sudo sed -i 's|https://ps-targethost:3804/prime-square|http://#{TARGET_HOST}/prime-square|g' /var/www/html/prime-square/assets/environment/environment.json
+                        if [ -f "/var/www/html/prime-square/main.e1f206db06620922.js" ]; then
+                          sudo sed -i 's|https://ps-targethost:3804/prime-square|http://#{TARGET_HOST}/prime-square|g' /var/www/html/prime-square/main.e1f206db06620922.js
+                        else
+                          echo "Warning: File main.e1f206db06620922.js not found. Skipping sed operation."
+                        fi
+
+                        if [ -f "/var/www/html/prime-square/assets/environment/environment.json" ]; then
+                          sudo sed -i 's|https://ps-targethost:3804/prime-square|http://#{TARGET_HOST}/prime-square|g' /var/www/html/prime-square/assets/environment/environment.json
+                        else
+                          echo "Warning: File environment.json not found. Skipping sed operation."
+                        fi
 
                         echo "Step 10: Starting Apache2 service..."
                         sudo systemctl start apache2
