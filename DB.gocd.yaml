@@ -1,0 +1,79 @@
+format_version: 10
+pipelines:
+  database-deployment:
+    group: deployment-group
+    label_template: ${COUNT}
+    lock_behavior: none
+    display_order: 2
+    materials:
+      git-database:
+        git: https://github.com/suryaveerubhotla/simple-ui.git
+        shallow_clone: false
+        auto_update: true
+        branch: main
+    stages:
+      - SetupDB:
+          fetch_materials: true
+          keep_artifacts: false
+          clean_workspace: false
+          approval:
+            type: manual
+          jobs:
+            setup-database:
+              timeout: 0
+              tasks:
+                - exec:
+                    command: /bin/bash
+                    arguments:
+                      - -c
+                      - |
+                        echo "Setting up environment variables..."
+                        export DB_DIR=/home/ubuntu/database
+                        export SFTP_HOST=192.168.56.106
+                        export SFTP_USER=surya
+                        export SFTP_KEY=/var/go/.ssh/id_rsa
+                        export SFTP_UPLOADS_DIR=uploads
+                        export BUILD_FILE="ps_be_1.1.26_idfc_1.1.13-8b07db6-319.zip"
+                        export DB_USER=psdbadmin
+                        export DB_PASS=6%EOm@Te1sb19Th6
+
+                        echo "Creating and setting up DB_DIR..."
+                        if [ ! -d "${DB_DIR}" ]; then
+                          sudo mkdir -p "${DB_DIR}" || { echo "Failed to create ${DB_DIR}"; exit 1; }
+                        fi
+                        sudo chmod -R 775 "${DB_DIR}"
+                        sudo chown -R go:go "${DB_DIR}"
+
+                        echo "Fetching the specified database build file from SFTP..."
+                        sudo -u go sftp -o StrictHostKeyChecking=no -i ${SFTP_KEY} ${SFTP_USER}@${SFTP_HOST} <<EOF
+                        cd ${SFTP_UPLOADS_DIR}
+                        get ${BUILD_FILE} ${DB_DIR}/
+                        bye
+                        EOF
+                        if [ $? -ne 0 ]; then
+                          echo "Failed to fetch the specified database build file from SFTP."
+                          exit 1
+                        fi
+
+                        echo "Extracting database scripts into DB_DIR..."
+                        sudo unzip -o "${DB_DIR}/${BUILD_FILE}" -d "${DB_DIR}" || { echo "Failed to extract database scripts"; exit 1; }
+
+                        echo "Setting execute permissions for database scripts..."
+                        sudo chmod -R +x "${DB_DIR}" || { echo "Failed to set permissions"; exit 1; }
+
+                        echo "Dropping and recreating the database..."
+                        mysql < "${DB_DIR}/ddl_drop_schema_script.sql" -u ${DB_USER} -p${DB_PASS} || { echo "Failed to execute ddl_drop_schema_script.sql"; exit 1; }
+                        mysql < "${DB_DIR}/idfc_primesquare_workflow_ddl_dml.sql" -u ${DB_USER} -p${DB_PASS} || { echo "Failed to execute primesquare_workflow_ddl_dml.sql"; exit 1; }
+                        mysql < "${DB_DIR}/ddl_create_scripts.sql" -u ${DB_USER} -p${DB_PASS} || { echo "Failed to execute ddl_create_scripts.sql"; exit 1; }
+                        mysql < "${DB_DIR}/dml_insert_scripts.sql" -u ${DB_USER} -p${DB_PASS} || { echo "Failed to execute dml_insert_scripts.sql"; exit 1; }
+                        mysql < "${DB_DIR}/ps_index_create.sql" -u ${DB_USER} -p${DB_PASS} || { echo "Failed to execute ps_index_create.sql"; exit 1; }
+                        echo "Database setup complete."
+              resources:
+                - ubuntu
+              environment_variables:
+                GOCD_ENVIRONMENT: database-pipeline
+
+environments:
+  database-pipeline:
+    pipelines:
+      - database-deployment
