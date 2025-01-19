@@ -41,7 +41,7 @@ pipelines:
                         if [ ! -d "${DB_DIR}" ]; then
                           sudo mkdir -p "${DB_DIR}" || { echo "Failed to create ${DB_DIR}"; exit 1; }
                         fi
-                        sudo chmod -R 775 "${DB_DIR}"
+                        sudo chmod -R 755 "${DB_DIR}"
                         sudo chown -R go:go "${DB_DIR}"
 
                         echo "Fetching the specified database build file from SFTP..."
@@ -62,11 +62,11 @@ pipelines:
                         sudo chmod -R +x "${DB_DIR}" || { echo "Failed to set permissions"; exit 1; }
 
                         echo "Dropping and recreating the database..."
-                        mysql < "${DB_DIR}/ddl_drop_schema_script.sql" -u ${DB_USER} -p${DB_PASS} || { echo "Failed to execute ddl_drop_schema_script.sql"; exit 1; }
-                        mysql < "${DB_DIR}/idfc_primesquare_workflow_ddl_dml.sql" -u ${DB_USER} -p${DB_PASS} || { echo "Failed to execute primesquare_workflow_ddl_dml.sql"; exit 1; }
-                        mysql < "${DB_DIR}/ddl_create_scripts.sql" -u ${DB_USER} -p${DB_PASS} || { echo "Failed to execute ddl_create_scripts.sql"; exit 1; }
-                        mysql < "${DB_DIR}/dml_insert_scripts.sql" -u ${DB_USER} -p${DB_PASS} || { echo "Failed to execute dml_insert_scripts.sql"; exit 1; }
-                        mysql < "${DB_DIR}/ps_index_create.sql" -u ${DB_USER} -p${DB_PASS} || { echo "Failed to execute ps_index_create.sql"; exit 1; }
+                        mysql < "${DB_DIR}/database-scripts/ddl_drop_schema_script.sql" -u ${DB_USER} -p${DB_PASS} || { echo "Failed to execute ddl_drop_schema_script.sql"; exit 1; }
+                        mysql < "${DB_DIR}/database-scripts/idfc_primesquare_workflow_ddl_dml.sql" -u ${DB_USER} -p${DB_PASS} || { echo "Failed to execute primesquare_workflow_ddl_dml.sql"; exit 1; }
+                        mysql < "${DB_DIR}/database-scripts/ddl_create_scripts.sql" -u ${DB_USER} -p${DB_PASS} || { echo "Failed to execute ddl_create_scripts.sql"; exit 1; }
+                        mysql < "${DB_DIR}/database-scripts/dml_insert_scripts.sql" -u ${DB_USER} -p${DB_PASS} || { echo "Failed to execute dml_insert_scripts.sql"; exit 1; }
+                        mysql < "${DB_DIR}/database-scripts/ps_index_create.sql" -u ${DB_USER} -p${DB_PASS} || { echo "Failed to execute ps_index_create.sql"; exit 1; }
                         echo "Database setup complete."
               resources:
                 - ubuntu
