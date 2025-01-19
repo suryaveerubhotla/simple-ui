@@ -2,13 +2,23 @@ format_version: 10
 pipelines:
   backend-deployment:
     group: backend-group
-    label_template: ${COUNT}
+    label_template: "${COUNT}"
     lock_behavior: none
     display_order: 1
+    parameters:
+      BUILD_DIR: "/home/ubuntu/builds"
+      BE_TARGET_DIR: "/home/ubuntu/prime-square"
+      BE_ARCHIVE_DIR: "/home/ubuntu/archive"
+      DB_SCRIPTS_DIR: "/home/ubuntu/prime-square/database-scripts"
+      SERVICE: "PrimeSquare.service"
+      SFTP_HOST: "192.168.56.106"
+      SFTP_USER: "surya"
+      SFTP_KEY: "/var/go/.ssh/id_rsa"
+      SFTP_UPLOADS_DIR: "uploads"
     materials:
       git-backend:
         git: https://github.com/suryaveerubhotla/simple-ui.git
-        shallow_clone: false
+        shallow_clone: true
         auto_update: true
         branch: main
     stages:
@@ -27,110 +37,74 @@ pipelines:
                     arguments:
                       - -c
                       - |
-                        echo "Exporting environment variables..."
-                        export BUILD_DIR=/home/ubuntu/builds
-                        export BE_TARGET_DIR=/home/ubuntu/prime-square
-                        export BE_ARCHIVE_DIR=/home/ubuntu/archive
-                        export SERVICE=PrimeSquare.service
-                        export DB_SCRIPTS_DIR=/home/ubuntu/prime-square/database-scripts
-                        export DB_USER=psdbadmin
-                        export DB_PASS=6%EOm@Te1sb19Th6
-                        export SFTP_HOST=192.168.56.106
-                        export SFTP_USER=surya
-                        export SFTP_KEY=/var/go/.ssh/id_rsa
-                        export SFTP_UPLOADS_DIR=uploads
-                        export BUILD_FILE="ps_be_1.1.26_idfc_1.1.13-8b07db6-319.zip"
-
-                        echo "Checking if BUILD_DIR exists..."
-                        if [ -d "${BUILD_DIR}" ]; then
-                          echo "BUILD_DIR exists. Removing all contents..."
-                          sudo rm -rf ${BUILD_DIR}/* || { echo "Failed to remove contents in ${BUILD_DIR}"; exit 1; }
-                        else
-                          echo "BUILD_DIR does not exist. Creating ${BUILD_DIR}..."
-                          sudo mkdir -p "${BUILD_DIR}" || { echo "Failed to create ${BUILD_DIR}"; exit 1; }
+                        echo "Fetching environment variables..."
+                        export DB_PASS=$(cat /var/go/secrets/db_pass)
+                        if [ -z "${DB_PASS}" ]; then
+                          echo "Database password not set!"
+                          exit 1
                         fi
-                        sudo chmod -R 775 "${BUILD_DIR}" || { echo "Failed to set permissions for BUILD_DIR"; exit 1; }
-                        sudo chown -R go:go "${BUILD_DIR}" || { echo "Failed to change ownership of BUILD_DIR"; exit 1; }
-
-                        echo "Checking if BE_TARGET_DIR exists..."
-                        if [ -d "${BE_TARGET_DIR}" ]; then
-                          echo "BE_TARGET_DIR exists. Removing all contents..."
-                          sudo rm -rf ${BE_TARGET_DIR}/* || { echo "Failed to remove contents in ${BE_TARGET_DIR}"; exit 1; }
-                        else
-                          echo "BE_TARGET_DIR does not exist. Creating ${BE_TARGET_DIR}..."
-                          sudo mkdir -p "${BE_TARGET_DIR}" || { echo "Failed to create ${BE_TARGET_DIR}"; exit 1; }
-                        fi
-                        sudo chmod -R 775 "${BE_TARGET_DIR}" || { echo "Failed to set permissions for BE_TARGET_DIR"; exit 1; }
-                        sudo chown -R go:go "${BE_TARGET_DIR}" || { echo "Failed to change ownership of BE_TARGET_DIR"; exit 1; }
-
-                        echo "Checking if service ${SERVICE} exists..."
-                        if [ -f /etc/systemd/system/${SERVICE} ]; then
-                          echo "${SERVICE} exists. Checking service status..."
-                          sudo systemctl status ${SERVICE} > /dev/null 2>&1
-                          if [ $? -eq 0 ]; then
-                            echo "${SERVICE} is running. Stopping the service..."
-                            sudo systemctl stop ${SERVICE} || { echo "Failed to stop ${SERVICE}"; exit 1; }
+                        
+                        echo "Setting up directories..."
+                        for DIR in "${BUILD_DIR}" "${BE_TARGET_DIR}"; do
+                          if [ -d "${DIR}" ]; then
+                            echo "${DIR} exists. Cleaning..."
+                            sudo rm -rf ${DIR}/*
                           else
-                            echo "${SERVICE} is not running."
+                            echo "${DIR} does not exist. Creating..."
+                            sudo mkdir -p "${DIR}"
                           fi
-                        else
-                          echo "${SERVICE} does not exist. Proceeding..."
-                        fi
+                          sudo chmod -R 775 "${DIR}"
+                          sudo chown -R go:go "${DIR}"
+                        done
 
-                        echo "Accessing SFTP machine to fetch the specified backend zip file..."
+                        echo "Fetching latest build file from SFTP..."
+                        LATEST_FILE=$(sudo -u go sftp -o StrictHostKeyChecking=no -i ${SFTP_KEY} ${SFTP_USER}@${SFTP_HOST} <<EOF
+                        cd ${SFTP_UPLOADS_DIR}
+                        ls -t | head -n 1
+                        bye
+                        EOF
+                        )
+                        if [ -z "${LATEST_FILE}" ]; then
+                          echo "No files found in SFTP directory."
+                          exit 1
+                        fi
+                        echo "Latest file: ${LATEST_FILE}"
+
+                        echo "Downloading latest build file..."
                         sudo -u go sftp -o StrictHostKeyChecking=no -i ${SFTP_KEY} ${SFTP_USER}@${SFTP_HOST} <<EOF
                         cd ${SFTP_UPLOADS_DIR}
-                        get ${BUILD_FILE} ${BUILD_DIR}/
+                        get ${LATEST_FILE} ${BUILD_DIR}/
                         bye
                         EOF
                         if [ $? -ne 0 ]; then
-                          echo "Failed to fetch the specified backend zip file from SFTP."
+                          echo "Failed to download latest build file."
                           exit 1
                         fi
 
-                        echo "Unzipping the backend artifacts to BE_TARGET_DIR..."
-                        sudo unzip -o "${BUILD_DIR}/${BUILD_FILE}" -d "${BE_TARGET_DIR}" || { echo "Failed to unzip backend.zip"; exit 1; }
+                        echo "Unzipping build file..."
+                        sudo unzip -o "${BUILD_DIR}/${LATEST_FILE}" -d "${BE_TARGET_DIR}" || { echo "Failed to unzip build file"; exit 1; }
 
-                        echo "Listing extracted files in BE_TARGET_DIR..."
-                        sudo ls -l "${BE_TARGET_DIR}"
-
-                        echo "Checking and copying service file if needed..."
-                        if [ ! -f /etc/systemd/system/${SERVICE} ]; then
-                          sudo cp "${BE_TARGET_DIR}/service/${SERVICE}" /etc/systemd/system/ || { echo "Failed to copy service file"; exit 1; }
-                          echo "Enabling the service..."
-                          sudo systemctl enable ${SERVICE} || { echo "Failed to enable ${SERVICE}"; exit 1; }
+                        echo "Setting up the service..."
+                        if [ -f /etc/systemd/system/${SERVICE} ]; then
+                          sudo systemctl stop ${SERVICE}
                         else
-                          echo "Service file already exists. Skipping copy."
+                          sudo cp "${BE_TARGET_DIR}/service/${SERVICE}" /etc/systemd/system/ || { echo "Failed to copy service file"; exit 1; }
+                          sudo systemctl enable ${SERVICE}
                         fi
-
-                        echo "Making wrapper.sh executable..."
-                        sudo chmod +x "${BE_TARGET_DIR}/wrapper.sh" || { echo "Failed to make wrapper.sh executable"; exit 1; }
 
                         echo "Reloading systemd daemon..."
-                        sudo systemctl daemon-reload || { echo "Failed to reload systemd daemon"; exit 1; }
-
-                        echo "Giving execute permissions to database scripts..."
-                        sudo chmod -R +x "${DB_SCRIPTS_DIR}" || { echo "Failed to give execute permissions to database scripts"; exit 1; }
-
-                        echo "Fetching DB password securely..."
-                        DB_PASS=$(cat /var/go/secrets/db_pass)
-                        if [ -z "${DB_PASS}" ]; then
-                          echo "Database password is missing!"
-                          exit 1
-                        fi
+                        sudo systemctl daemon-reload
 
                         echo "Executing database scripts..."
-                        mysql < "${DB_SCRIPTS_DIR}/ddl_drop_schema_script.sql" -u ${DB_USER} -p${DB_PASS} || { echo "Failed to execute ddl_drop_schema_script.sql"; exit 1; }
-                        mysql < "${DB_SCRIPTS_DIR}/idfc_primesquare_workflow_ddl_dml.sql" -u ${DB_USER} -p${DB_PASS} || { echo "Failed to execute primesquare_workflow_ddl_dml.sql"; exit 1; }
-                        mysql < "${DB_SCRIPTS_DIR}/ddl_create_scripts.sql" -u ${DB_USER} -p${DB_PASS} || { echo "Failed to execute ddl_create_scripts.sql"; exit 1; }
-                        mysql < "${DB_SCRIPTS_DIR}/dml_insert_scripts.sql" -u ${DB_USER} -p${DB_PASS} || { echo "Failed to execute dml_insert_scripts.sql"; exit 1; }
-                        mysql < "${DB_SCRIPTS_DIR}/ps_index_create.sql" -u ${DB_USER} -p${DB_PASS} || { echo "Failed to execute ps_index_create.sql"; exit 1; }
+                        for SCRIPT in ddl_drop_schema_script.sql idfc_primesquare_workflow_ddl_dml.sql ddl_create_scripts.sql dml_insert_scripts.sql ps_index_create.sql; do
+                          mysql < "${DB_SCRIPTS_DIR}/${SCRIPT}" -u psdbadmin -p"${DB_PASS}" || { echo "Failed to execute ${SCRIPT}"; exit 1; }
+                        done
 
                         echo "Starting service..."
-                        sudo systemctl start ${SERVICE} || { echo "Failed to start ${SERVICE}"; exit 1; }
+                        sudo systemctl start ${SERVICE}
                         sudo systemctl status ${SERVICE}
-
-                        echo "Deployment complete."
+                        
+                        echo "Deployment completed successfully."
               resources:
                 - ubuntu
               environment_variables:
