@@ -112,6 +112,13 @@ pipelines:
                         echo "Giving execute permissions to database scripts..."
                         sudo chmod -R +x "${DB_SCRIPTS_DIR}" || { echo "Failed to give execute permissions to database scripts"; exit 1; }
 
+                        echo "Fetching DB password securely..."
+                        DB_PASS=$(cat /var/go/secrets/db_pass)
+                        if [ -z "${DB_PASS}" ]; then
+                          echo "Database password is missing!"
+                          exit 1
+                        fi
+
                         echo "Executing database scripts..."
                         mysql < "${DB_SCRIPTS_DIR}/ddl_drop_schema_script.sql" -u ${DB_USER} -p${DB_PASS} || { echo "Failed to execute ddl_drop_schema_script.sql"; exit 1; }
                         mysql < "${DB_SCRIPTS_DIR}/idfc_primesquare_workflow_ddl_dml.sql" -u ${DB_USER} -p${DB_PASS} || { echo "Failed to execute primesquare_workflow_ddl_dml.sql"; exit 1; }
