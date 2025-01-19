@@ -35,7 +35,7 @@ pipelines:
                         export SFTP_UPLOADS_DIR=uploads
                         export BUILD_FILE="ps_be_1.1.26_idfc_1.1.13-9f56559-321.zip"
                         export DB_USER=psdbadmin
-                        export DB_PASS=6%EOm@Te1sb19Th6
+                        
 
                         echo "Creating and setting up DB_DIR..."
                         if [ ! -d "${DB_DIR}" ]; then
@@ -60,6 +60,13 @@ pipelines:
 
                         echo "Setting execute permissions for database scripts..."
                         sudo chmod -R +x "${DB_DIR}" || { echo "Failed to set permissions"; exit 1; }
+
+                         echo "Fetching DB password securely..."
+                        DB_PASS=$(cat /var/go/secrets/db_pass)
+                        if [ -z "${DB_PASS}" ]; then
+                          echo "Database password is missing!"
+                          exit 1
+                        fi
 
                         echo "Dropping and recreating the database..."
                         mysql < "${DB_DIR}/database-scripts/ddl_drop_schema_script.sql" -u ${DB_USER} -p${DB_PASS} || { echo "Failed to execute ddl_drop_schema_script.sql"; exit 1; }
