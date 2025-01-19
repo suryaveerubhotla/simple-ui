@@ -39,7 +39,7 @@ pipelines:
                         export SFTP_USER=surya
                         export SFTP_KEY=/var/go/.ssh/id_rsa
                         export SFTP_UPLOADS_DIR=uploads
-                        export BUILD_FILE="ps_be_1.1.26_idfc_1.1.13-8b07db6-319.zip"
+                        
 
                         echo "Checking if BUILD_DIR exists..."
                         if [ -d "${BUILD_DIR}" ]; then
@@ -77,19 +77,34 @@ pipelines:
                           echo "${SERVICE} does not exist. Proceeding..."
                         fi
 
-                        echo "Accessing SFTP machine to fetch the specified backend zip file..."
+                        echo "Accessing SFTP machine to fetch the latest backend zip file..."
+                        LATEST_BUILD_FILE=$(sudo -u go sftp -o StrictHostKeyChecking=no -i ${SFTP_KEY} ${SFTP_USER}@${SFTP_HOST} <<EOF
+                        cd ${SFTP_UPLOADS_DIR}
+                        ls -t *.zip | head -n 1
+                        bye
+                        EOF
+                        )
+
+                        if [ -z "$LATEST_BUILD_FILE" ]; then
+                          echo "No build file found in the SFTP directory."
+                          exit 1
+                        fi
+
+                        echo "Latest build file found: ${LATEST_BUILD_FILE}"
+
                         sudo -u go sftp -o StrictHostKeyChecking=no -i ${SFTP_KEY} ${SFTP_USER}@${SFTP_HOST} <<EOF
                         cd ${SFTP_UPLOADS_DIR}
-                        get ${BUILD_FILE} ${BUILD_DIR}/
+                        get ${LATEST_BUILD_FILE} ${BUILD_DIR}/
                         bye
                         EOF
                         if [ $? -ne 0 ]; then
-                          echo "Failed to fetch the specified backend zip file from SFTP."
+                          echo "Failed to fetch the latest build file from SFTP."
                           exit 1
                         fi
 
                         echo "Unzipping the backend artifacts to BE_TARGET_DIR..."
-                        sudo unzip -o "${BUILD_DIR}/${BUILD_FILE}" -d "${BE_TARGET_DIR}" || { echo "Failed to unzip backend.zip"; exit 1; }
+                        sudo unzip -o "${BUILD_DIR}/${LATEST_BUILD_FILE}" -d "${BE_TARGET_DIR}" || { echo "Failed to unzip ${LATEST_BUILD_FILE}"; exit 1; }
+
 
                         echo "Listing extracted files in BE_TARGET_DIR..."
                         sudo ls -l "${BE_TARGET_DIR}"
