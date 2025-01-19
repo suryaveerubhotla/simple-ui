@@ -41,6 +41,28 @@ pipelines:
                         export SFTP_UPLOADS_DIR=uploads
                         export BUILD_FILE="ps_be_1.1.26_idfc_1.1.13-8b07db6-319.zip"
 
+                        echo "Checking if BUILD_DIR exists..."
+                        if [ -d "${BUILD_DIR}" ]; then
+                          echo "BUILD_DIR exists. Removing all contents..."
+                          sudo rm -rf ${BUILD_DIR}/* || { echo "Failed to remove contents in ${BUILD_DIR}"; exit 1; }
+                        else
+                          echo "BUILD_DIR does not exist. Creating ${BUILD_DIR}..."
+                          sudo mkdir -p "${BUILD_DIR}" || { echo "Failed to create ${BUILD_DIR}"; exit 1; }
+                        fi
+                        sudo chmod -R 775 "${BUILD_DIR}" || { echo "Failed to set permissions for BUILD_DIR"; exit 1; }
+                        sudo chown -R go:go "${BUILD_DIR}" || { echo "Failed to change ownership of BUILD_DIR"; exit 1; }
+
+                        echo "Checking if BE_TARGET_DIR exists..."
+                        if [ -d "${BE_TARGET_DIR}" ]; then
+                          echo "BE_TARGET_DIR exists. Removing all contents..."
+                          sudo rm -rf ${BE_TARGET_DIR}/* || { echo "Failed to remove contents in ${BE_TARGET_DIR}"; exit 1; }
+                        else
+                          echo "BE_TARGET_DIR does not exist. Creating ${BE_TARGET_DIR}..."
+                          sudo mkdir -p "${BE_TARGET_DIR}" || { echo "Failed to create ${BE_TARGET_DIR}"; exit 1; }
+                        fi
+                        sudo chmod -R 775 "${BE_TARGET_DIR}" || { echo "Failed to set permissions for BE_TARGET_DIR"; exit 1; }
+                        sudo chown -R go:go "${BE_TARGET_DIR}" || { echo "Failed to change ownership of BE_TARGET_DIR"; exit 1; }
+
                         echo "Checking if service ${SERVICE} exists..."
                         if [ -f /etc/systemd/system/${SERVICE} ]; then
                           echo "${SERVICE} exists. Checking service status..."
@@ -55,19 +77,6 @@ pipelines:
                           echo "${SERVICE} does not exist. Proceeding..."
                         fi
 
-                        echo "Checking and creating BUILD_DIR if needed..."
-                        if [ ! -d "${BUILD_DIR}" ]; then
-                          echo "BUILD_DIR does not exist. Creating ${BUILD_DIR}..."
-                          sudo mkdir -p "${BUILD_DIR}" || { echo "Failed to create ${BUILD_DIR}"; exit 1; }
-                        else
-                          echo "BUILD_DIR exists. Using existing ${BUILD_DIR}..."
-                        fi
-                        sudo chmod -R 775 "${BUILD_DIR}" || { echo "Failed to set permissions for BUILD_DIR"; exit 1; }
-                        sudo chown -R go:go "${BUILD_DIR}" || { echo "Failed to change ownership of BUILD_DIR"; exit 1; }
-
-                        echo "Removing existing ps_be_*.zip files from BUILD_DIR..."
-                        sudo rm -f "${BUILD_DIR}/ps_be_*.zip" || { echo "Failed to remove old zip files"; exit 1; }
-
                         echo "Accessing SFTP machine to fetch the specified backend zip file..."
                         sudo -u go sftp -o StrictHostKeyChecking=no -i ${SFTP_KEY} ${SFTP_USER}@${SFTP_HOST} <<EOF
                         cd ${SFTP_UPLOADS_DIR}
@@ -79,18 +88,6 @@ pipelines:
                           exit 1
                         fi
 
-                        echo "Checking and creating BE_TARGET_DIR if needed..."
-                        if [ ! -d "${BE_TARGET_DIR}" ]; then
-                          echo "BE_TARGET_DIR does not exist. Creating ${BE_TARGET_DIR}..."
-                          sudo mkdir -p "${BE_TARGET_DIR}" || { echo "Failed to create ${BE_TARGET_DIR}"; exit 1; }
-                        else
-                          echo "BE_TARGET_DIR exists. Using existing ${BE_TARGET_DIR}..."
-                        fi
-
-                        echo "Changing permissions of BE_TARGET_DIR to go:go..."
-                        sudo chown -R go:go "${BE_TARGET_DIR}" || { echo "Failed to change permissions of BE_TARGET_DIR"; exit 1; }
-                        sudo chmod -R 775 "${BE_TARGET_DIR}" || { echo "Failed to set permissions for BE_TARGET_DIR"; exit 1; }
-
                         echo "Unzipping the backend artifacts to BE_TARGET_DIR..."
                         sudo unzip -o "${BUILD_DIR}/${BUILD_FILE}" -d "${BE_TARGET_DIR}" || { echo "Failed to unzip backend.zip"; exit 1; }
 
@@ -100,7 +97,6 @@ pipelines:
                         echo "Checking and copying service file if needed..."
                         if [ ! -f /etc/systemd/system/${SERVICE} ]; then
                           sudo cp "${BE_TARGET_DIR}/service/${SERVICE}" /etc/systemd/system/ || { echo "Failed to copy service file"; exit 1; }
-
                           echo "Enabling the service..."
                           sudo systemctl enable ${SERVICE} || { echo "Failed to enable ${SERVICE}"; exit 1; }
                         else
