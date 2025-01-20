@@ -55,7 +55,7 @@ pipelines:
                           sudo mkdir -p "${DB_DIR}" || { echo "Failed to create ${DB_DIR}"; exit 1; }
                         fi
                         
-                        sudo chown -R ubuntu:ubuntu "${DB_DIR}"
+                        sudo chown -R go:go "${DB_DIR}"
 
                         echo "Fetching the specified database build file from SFTP..."
                         sudo -u go sftp -o StrictHostKeyChecking=no -i ${SFTP_KEY} ${SFTP_USER}@${SFTP_HOST} <<EOF
@@ -92,7 +92,7 @@ pipelines:
                         echo "Starting service..."
                         sudo systemctl start ${SERVICE} || { echo "Failed to start ${SERVICE}"; exit 1; }
                         sudo systemctl status ${SERVICE}
-                        
+
               resources:
                 - ubuntu
               environment_variables:
