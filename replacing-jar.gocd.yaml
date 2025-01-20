@@ -67,7 +67,7 @@ pipelines:
                         echo "Checking for BACKUP_DIR"
                         if [ ! -d "${BACKUP_DIR}" ]; then
                           echo "BACKUP_DIR does not exist. Creating ${BACKUP_DIR}..."
-                          mkdir -p "${BACKUP_DIR}" || { echo "Failed to create ${BACKUP_DIR}"; exit 1; }
+                         sudo mkdir -p "${BACKUP_DIR}" || { echo "Failed to create ${BACKUP_DIR}"; exit 1; }
                         else
                           echo "BACKUP_DIR exists. Using existing ${BACKUP_DIR}..."
                         fi
