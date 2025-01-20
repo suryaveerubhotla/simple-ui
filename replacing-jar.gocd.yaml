@@ -1,7 +1,7 @@
 format_version: 10
 pipelines:
   replacing-jar:
-    group: replacingjar-group
+    group: deployment-group
     label_template: ${COUNT}
     lock_behavior: none
     display_order: -1
@@ -34,16 +34,18 @@ pipelines:
                         export BACKUP_DIR=/home/ubuntu/prime-square-backup
                         export BE_ARCHIVE_DIR=/home/ubuntu/archive/
                         export SERVICE=PrimeSquare.service
-                        export SFTP_HOST=192.168.56.106
+                        export DB_SCRIPTS_DIR=/home/ubuntu/prime-square/database-scripts
+                        export DB_USER=psdbadmin
+                        export DB_PASS=6%EOm@Te1sb19Th6
+                        export SFTP_HOST=172.16.7.116
                         export SFTP_USER=surya
                         export SFTP_KEY=/var/go/.ssh/id_rsa
                         export SFTP_UPLOADS_DIR=uploads
-                        export BUILD_FILE=ps_be_1.1.25_idfc_1.1.12-09090bd-283.zip
 
                         echo "Checking and creating BUILD_DIR if needed..."
                         if [ ! -d "${BUILD_DIR}" ]; then
                           echo "BUILD_DIR does not exist. Creating ${BUILD_DIR}..."
-                          sudo mkdir -p "${BUILD_DIR}" || { echo "Failed to create ${BUILD_DIR}"; exit 1; }
+                          mkdir -p "${BUILD_DIR}" || { echo "Failed to create ${BUILD_DIR}"; exit 1; }
                         else
                           echo "BUILD_DIR exists. Using existing ${BUILD_DIR}..."
                         fi
@@ -59,12 +61,12 @@ pipelines:
                         echo "Accessing SFTP machine to fetch the backend zip file..."
                         sftp -o StrictHostKeyChecking=no -i "${SFTP_KEY}" "${SFTP_USER}@${SFTP_HOST}" <<EOF
                         cd ${SFTP_UPLOADS_DIR}
-                        get ${BUILD_FILE} ${BUILD_DIR}
+                        get ps_be_*.zip ${BUILD_DIR}
                         bye
                         EOF
 
                         if [ $? -ne 0 ]; then
-                          echo "Failed to fetch backend zip file (${BUILD_FILE}) from SFTP."
+                          echo "Failed to fetch backend.zip from SFTP."
                           exit 1
                         fi
 
@@ -84,7 +86,7 @@ pipelines:
                         echo "Checking for BE_ARCHIVE_DIR"
                         if [ ! -d "${BE_ARCHIVE_DIR}" ]; then
                           echo "BE_ARCHIVE_DIR does not exist. Creating ${BE_ARCHIVE_DIR}..."
-                          sudo mkdir -p "${BE_ARCHIVE_DIR}" || { echo "Failed to create ${BE_ARCHIVE_DIR}"; exit 1; }
+                          mkdir -p "${BE_ARCHIVE_DIR}" || { echo "Failed to create ${BE_ARCHIVE_DIR}"; exit 1; }
                         else
                           echo "BE_ARCHIVE_DIR exists. Using existing ${BE_ARCHIVE_DIR}..."
                         fi
@@ -92,23 +94,26 @@ pipelines:
                         echo "Checking for BACKUP_DIR"
                         if [ ! -d "${BACKUP_DIR}" ]; then
                           echo "BACKUP_DIR does not exist. Creating ${BACKUP_DIR}..."
-                          sudo mkdir -p "${BACKUP_DIR}" || { echo "Failed to create ${BACKUP_DIR}"; exit 1; }
+                          mkdir -p "${BACKUP_DIR}" || { echo "Failed to create ${BACKUP_DIR}"; exit 1; }
                         else
                           echo "BACKUP_DIR exists. Using existing ${BACKUP_DIR}..."
                         fi
 
-                        
+                        echo "Checking for backend (ps_be)..."
+                        BE_ZIP=$(ls ${BUILD_DIR}/ps_be*.zip 2>/dev/null | head -n 1)
+                        if [ -z "${BE_ZIP}" ]; then
+                          echo "No ps_be zip file found in ${BUILD_DIR}!"
+                          exit 1
+                        else
+                          echo "Found backend zip: ${BE_ZIP}"
                           echo "Unzipping backend.zip..."
-                          sudo unzip -o "${BUILD_DIR}/${BUILD_FILE}" -d "${BE_ARCHIVE_DIR}" || { echo "Failed to unzip ps_be"; exit 1; }
+                          unzip -o "${BE_ZIP}" -d "${BE_ARCHIVE_DIR}" || { echo "Failed to unzip ps_be"; exit 1; }
 
                           JAR_FILE=$(find "${BE_ARCHIVE_DIR}" -type f -name "core-*.jar" | head -n 1)
                           if [ -z "${JAR_FILE}" ]; then
                             echo "No core-*.jar file found in the ps_be zip!"
                             exit 1
                           fi
-
-                          echo "giving permissions for jar"
-                          sudo chown ubuntu:ubuntu ${JAR_FILE}
 
                           echo "Checking for BE_TARGET_DIR"
                           if [ ! -d "${BE_TARGET_DIR}" ]; then
@@ -118,19 +123,19 @@ pipelines:
                           fi
 
                           echo "Moving existing JAR files from BE_TARGET_DIR to BACKUP_DIR..."
-                          if [ -d "${BE_TARGET_DIR}" ]; then
-                            JAR_FILES=$(find "${BE_TARGET_DIR}" -maxdepth 1 -type f -name "core-*.jar")
-                            if [ -n "${JAR_FILES}" ]; then
-                              echo "Found JAR files in BE_TARGET_DIR. Moving to BACKUP_DIR..."
-                              for jar in ${JAR_FILES}; do
-                                sudo mv "$jar" "${BACKUP_DIR}" || { echo "Failed to move $jar to BACKUP_DIR."; exit 1; }
-                              done
-                            else
-                              echo "No JAR files found in BE_TARGET_DIR to move."
-                            fi
+                        if [ -d "${BE_TARGET_DIR}" ]; then
+                          JAR_FILES=$(find "${BE_TARGET_DIR}" -maxdepth 1 -type f -name "core-*.jar")
+                          if [ -n "${JAR_FILES}" ]; then
+                            echo "Found JAR files in BE_TARGET_DIR. Moving to BACKUP_DIR..."
+                            for jar in ${JAR_FILES}; do
+                              sudo mv "$jar" "${BACKUP_DIR}" || { echo "Failed to move $jar to BACKUP_DIR."; exit 1; }
+                            done
                           else
-                            echo "BE_TARGET_DIR does not exist. Nothing to move."
+                            echo "No JAR files found in BE_TARGET_DIR to move."
                           fi
+                        else
+                          echo "BE_TARGET_DIR does not exist. Nothing to move."
+                        fi
 
                           echo "Copying new JAR file to BE_TARGET_DIR..."
                           sudo cp "${JAR_FILE}" "${BE_TARGET_DIR}" || { echo "Failed to copy JAR file"; exit 1; }
@@ -142,8 +147,21 @@ pipelines:
                         echo "Listing files in BE_TARGET_DIR..."
                         ls -l "${BE_TARGET_DIR}"
 
+                        echo "Checking and copying service file if needed..."
+                        if [ ! -f /etc/systemd/system/${SERVICE} ]; then
+                          sudo cp "${BE_TARGET_DIR}/service/${SERVICE}" /etc/systemd/system/ || { echo "Failed to copy service file"; exit 1; }
+                        else
+                          echo "Service file already exists. Skipping copy."
+                        fi
+
+                        echo "Reloading systemd daemon..."
+                        sudo systemctl daemon-reload || { echo "Failed to reload systemd daemon"; exit 1; }
+                        
+                        echo "Enabling the service..."
+                        sudo systemctl enable ${SERVICE} || { echo "Failed to enable ${SERVICE}"; exit 1; }
+
                         echo "JAR replaced successfully. Starting the service..."
-                        sudo systemctl restart ${SERVICE} || { echo "Failed to start ${SERVICE}"; exit 1; }
+                        sudo systemctl start ${SERVICE} || { echo "Failed to start ${SERVICE}"; exit 1; }
                         sudo systemctl status ${SERVICE}
 environments:
   Frontandbackend:
