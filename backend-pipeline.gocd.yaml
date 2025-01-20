@@ -48,8 +48,11 @@ pipelines:
                           echo "BUILD_DIR does not exist. Creating ${BUILD_DIR}..."
                           sudo mkdir -p "${BUILD_DIR}" || { echo "Failed to create ${BUILD_DIR}"; exit 1; }
                         fi
-
                         
+                        echo "Changing permissions of BUILD_DIR to ubuntu:ubuntu..."
+                        sudo chown -R ubuntu:ubuntu "${BUILD_DIR}" || { echo "Failed to change ownership of BUILD_DIR"; exit 1; }
+
+    
 
                         echo "Checking if BE_TARGET_DIR exists..."
                         if [ -d "${BE_TARGET_DIR}" ]; then
@@ -60,7 +63,8 @@ pipelines:
                           sudo mkdir -p "${BE_TARGET_DIR}" || { echo "Failed to create ${BE_TARGET_DIR}"; exit 1; }
                         fi
                         
-                  
+                        echo "Changing permissions of BE_TARGET_DIR to ubuntu:ubuntu..."
+                        sudo chown -R ubuntu:ubuntu "${BE_TARGET_DIR}" || { echo "Failed to change permissions of BE_TARGET_DIR"; exit 1; }
 
                         echo "Checking if service ${SERVICE} exists..."
                         if [ -f /etc/systemd/system/${SERVICE} ]; then
