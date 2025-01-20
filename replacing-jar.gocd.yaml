@@ -108,7 +108,7 @@ pipelines:
                           fi
 
                           echo "giving permissions for jar"
-                          sudo chown ubuntu:ubuntu #JAR_FILE
+                          sudo chown ubuntu:ubuntu ${JAR_FILE}
 
                           echo "Checking for BE_TARGET_DIR"
                           if [ ! -d "${BE_TARGET_DIR}" ]; then
