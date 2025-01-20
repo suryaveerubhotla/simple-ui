@@ -41,17 +41,20 @@ pipelines:
                         export SFTP_USER=surya
                         export SFTP_KEY=/var/go/.ssh/id_rsa
                         export SFTP_UPLOADS_DIR=uploads
+                        
 
-                        echo "Checking if BUILD_DIR exists..."
-                        if [ -d "${BUILD_DIR}" ]; then
-                          echo "BUILD_DIR exists. Removing all contents..."
-                          sudo rm -rf ${BUILD_DIR}/* || { echo "Failed to remove contents in ${BUILD_DIR}"; exit 1; }
-                        else
+                        echo "Checking and creating BUILD_DIR if needed..."
+                        if [ ! -d "${BUILD_DIR}" ]; then
                           echo "BUILD_DIR does not exist. Creating ${BUILD_DIR}..."
-                          sudo mkdir -p "${BUILD_DIR}" || { echo "Failed to create ${BUILD_DIR}"; exit 1; }
+                          mkdir -p "${BUILD_DIR}" || { echo "Failed to create ${BUILD_DIR}"; exit 1; }
+                        else
+                          echo "BUILD_DIR exists. Using existing ${BUILD_DIR}..."
+                        fi
 
-                  
-
+                        echo "Removing all contents in BUILD_DIR exists..."
+                      
+                        sudo rm -rf ${BUILD_DIR}/* || { echo "Failed to remove contents in ${BUILD_DIR}"; exit 1; }
+                       
                         echo "Setting ownership and permissions for directories..."
                     
                         sudo chown -R ubuntu:ubuntu "${BUILD_DIR}" "${BE_TARGET_DIR}" "${BACKUP_DIR}" "${BE_ARCHIVE_DIR}"
