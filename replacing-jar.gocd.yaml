@@ -41,6 +41,7 @@ pipelines:
                         export SFTP_USER=surya
                         export SFTP_KEY=/var/go/.ssh/id_rsa
                         export SFTP_UPLOADS_DIR=uploads
+                        export BUILD_FILE="ps_be_1.1.26_idfc_1.1.13-8b07db6-319.zip"
                         
 
                         echo "Checking and creating BUILD_DIR if needed..."
@@ -64,7 +65,7 @@ pipelines:
                         echo "Accessing SFTP machine to fetch the backend zip file..."
                         sftp -o StrictHostKeyChecking=no -i "${SFTP_KEY}" "${SFTP_USER}@${SFTP_HOST}" <<EOF
                         cd ${SFTP_UPLOADS_DIR}
-                        get ps_be_*.zip ${BUILD_DIR}
+                        get ${BUILD_FILE} ${BUILD_DIR}/
                         bye
                         EOF
 
@@ -89,7 +90,7 @@ pipelines:
                         echo "Checking for BE_ARCHIVE_DIR"
                         if [ ! -d "${BE_ARCHIVE_DIR}" ]; then
                           echo "BE_ARCHIVE_DIR does not exist. Creating ${BE_ARCHIVE_DIR}..."
-                          mkdir -p "${BE_ARCHIVE_DIR}" || { echo "Failed to create ${BE_ARCHIVE_DIR}"; exit 1; }
+                        sudo mkdir -p "${BE_ARCHIVE_DIR}" || { echo "Failed to create ${BE_ARCHIVE_DIR}"; exit 1; }
                         else
                           echo "BE_ARCHIVE_DIR exists. Using existing ${BE_ARCHIVE_DIR}..."
                         fi
