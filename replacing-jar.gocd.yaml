@@ -47,7 +47,7 @@ pipelines:
                         echo "Checking and creating BUILD_DIR if needed..."
                         if [ ! -d "${BUILD_DIR}" ]; then
                           echo "BUILD_DIR does not exist. Creating ${BUILD_DIR}..."
-                          mkdir -p "${BUILD_DIR}" || { echo "Failed to create ${BUILD_DIR}"; exit 1; }
+                        sudo mkdir -p "${BUILD_DIR}" || { echo "Failed to create ${BUILD_DIR}"; exit 1; }
                         else
                           echo "BUILD_DIR exists. Using existing ${BUILD_DIR}..."
                         fi
@@ -55,6 +55,22 @@ pipelines:
                         echo "Removing all contents in BUILD_DIR exists..."
                       
                         sudo rm -rf ${BUILD_DIR}/* || { echo "Failed to remove contents in ${BUILD_DIR}"; exit 1; }
+
+                        echo "Checking for BE_ARCHIVE_DIR"
+                        if [ ! -d "${BE_ARCHIVE_DIR}" ]; then
+                          echo "BE_ARCHIVE_DIR does not exist. Creating ${BE_ARCHIVE_DIR}..."
+                        sudo mkdir -p "${BE_ARCHIVE_DIR}" || { echo "Failed to create ${BE_ARCHIVE_DIR}"; exit 1; }
+                        else
+                          echo "BE_ARCHIVE_DIR exists. Using existing ${BE_ARCHIVE_DIR}..."
+                        fi
+
+                        echo "Checking for BACKUP_DIR"
+                        if [ ! -d "${BACKUP_DIR}" ]; then
+                          echo "BACKUP_DIR does not exist. Creating ${BACKUP_DIR}..."
+                          mkdir -p "${BACKUP_DIR}" || { echo "Failed to create ${BACKUP_DIR}"; exit 1; }
+                        else
+                          echo "BACKUP_DIR exists. Using existing ${BACKUP_DIR}..."
+                        fi
                        
                         echo "Setting ownership and permissions for directories..."
                     
@@ -87,21 +103,7 @@ pipelines:
                           echo "${SERVICE} does not exist. Proceeding..."
                         fi
 
-                        echo "Checking for BE_ARCHIVE_DIR"
-                        if [ ! -d "${BE_ARCHIVE_DIR}" ]; then
-                          echo "BE_ARCHIVE_DIR does not exist. Creating ${BE_ARCHIVE_DIR}..."
-                        sudo mkdir -p "${BE_ARCHIVE_DIR}" || { echo "Failed to create ${BE_ARCHIVE_DIR}"; exit 1; }
-                        else
-                          echo "BE_ARCHIVE_DIR exists. Using existing ${BE_ARCHIVE_DIR}..."
-                        fi
-
-                        echo "Checking for BACKUP_DIR"
-                        if [ ! -d "${BACKUP_DIR}" ]; then
-                          echo "BACKUP_DIR does not exist. Creating ${BACKUP_DIR}..."
-                          mkdir -p "${BACKUP_DIR}" || { echo "Failed to create ${BACKUP_DIR}"; exit 1; }
-                        else
-                          echo "BACKUP_DIR exists. Using existing ${BACKUP_DIR}..."
-                        fi
+                        
 
                         echo "Checking for backend (ps_be)..."
                         BE_ZIP=$(ls ${BUILD_DIR}/ps_be*.zip 2>/dev/null | head -n 1)
