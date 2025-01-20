@@ -58,6 +58,12 @@ pipelines:
                           echo "No existing ps_be_*.zip files found. Proceeding..."
                         fi
 
+                        echo "Setting ownership and permissions for directories..."
+                    
+                        sudo chown -R ubuntu:ubuntu "${BUILD_DIR}" "${BE_TARGET_DIR}" "${BACKUP_DIR}" "${BE_ARCHIVE_DIR}"
+                        sudo chmod -R 775 "${BUILD_DIR}" "${BE_TARGET_DIR}" "${BACKUP_DIR}" "${BE_ARCHIVE_DIR}"
+
+
                         echo "Accessing SFTP machine to fetch the backend zip file..."
                         sftp -o StrictHostKeyChecking=no -i "${SFTP_KEY}" "${SFTP_USER}@${SFTP_HOST}" <<EOF
                         cd ${SFTP_UPLOADS_DIR}
