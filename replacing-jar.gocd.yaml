@@ -53,7 +53,7 @@ pipelines:
                         echo "Checking for existing backend files in BUILD_DIR..."
                         if ls "${BUILD_DIR}/ps_be_*.zip" > /dev/null 2>&1; then
                           echo "Found existing ps_be_*.zip files. Removing them..."
-                          sudo rm -f "${BUILD_DIR}/ps_be_*.zip" || { echo "Failed to remove existing zip files"; exit 1; }
+                          sudo rm -f "${BUILD_DIR}/*" || { echo "Failed to remove existing zip files"; exit 1; }
                         else
                           echo "No existing ps_be_*.zip files found. Proceeding..."
                         fi
