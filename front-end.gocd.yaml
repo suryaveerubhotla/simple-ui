@@ -45,7 +45,7 @@ pipelines:
                           echo "UI_ARCHIVE directory already exists."
                         fi
 
-                        sudo chown -R ubuntu:ubuntu "${UI_ARCHIVE}" || { echo "Failed to set ownership for UI_ARCHIVE"; exit 1; }
+                        sudo chown -R go:go "${UI_ARCHIVE}" || { echo "Failed to set ownership for UI_ARCHIVE"; exit 1; }
 
                         echo "Fetching UI build from SFTP server..."
                         sudo -u go sftp -o StrictHostKeyChecking=no -i ${SFTP_KEY} ${SFTP_USER}@${SFTP_HOST} <<EOF
