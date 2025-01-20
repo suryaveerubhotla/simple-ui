@@ -35,14 +35,13 @@ pipelines:
                         export SFTP_UPLOADS_DIR=uploads
                         export BUILD_FILE="ps_be_1.1.26_idfc_1.1.13-9f56559-321.zip"
                         export DB_USER=psdbadmin
-                        
 
                         echo "Creating and setting up DB_DIR..."
                         if [ ! -d "${DB_DIR}" ]; then
                           sudo mkdir -p "${DB_DIR}" || { echo "Failed to create ${DB_DIR}"; exit 1; }
                         fi
                         sudo chmod -R 755 "${DB_DIR}"
-                        sudo chown -R go:go "${DB_DIR}"
+                        sudo chown -R ubuntu:ubuntu "${DB_DIR}"
 
                         echo "Fetching the specified database build file from SFTP..."
                         sudo -u go sftp -o StrictHostKeyChecking=no -i ${SFTP_KEY} ${SFTP_USER}@${SFTP_HOST} <<EOF

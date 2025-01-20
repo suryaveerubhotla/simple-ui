@@ -34,9 +34,6 @@ pipelines:
                         export BACKUP_DIR=/home/ubuntu/prime-square-backup
                         export BE_ARCHIVE_DIR=/home/ubuntu/archive/
                         export SERVICE=PrimeSquare.service
-                        export DB_SCRIPTS_DIR=/home/ubuntu/prime-square/database-scripts
-                        export DB_USER=psdbadmin
-                        export DB_PASS=6%EOm@Te1sb19Th6
                         export SFTP_HOST=192.168.56.106
                         export SFTP_USER=surya
                         export SFTP_KEY=/var/go/.ssh/id_rsa
@@ -148,21 +145,8 @@ pipelines:
                         echo "Listing files in BE_TARGET_DIR..."
                         ls -l "${BE_TARGET_DIR}"
 
-                        echo "Checking and copying service file if needed..."
-                        if [ ! -f /etc/systemd/system/${SERVICE} ]; then
-                          sudo cp "${BE_TARGET_DIR}/service/${SERVICE}" /etc/systemd/system/ || { echo "Failed to copy service file"; exit 1; }
-                        else
-                          echo "Service file already exists. Skipping copy."
-                        fi
-
-                        echo "Reloading systemd daemon..."
-                        sudo systemctl daemon-reload || { echo "Failed to reload systemd daemon"; exit 1; }
-                        
-                        echo "Enabling the service..."
-                        sudo systemctl enable ${SERVICE} || { echo "Failed to enable ${SERVICE}"; exit 1; }
-
                         echo "JAR replaced successfully. Starting the service..."
-                        sudo systemctl start ${SERVICE} || { echo "Failed to start ${SERVICE}"; exit 1; }
+                        sudo systemctl restart ${SERVICE} || { echo "Failed to start ${SERVICE}"; exit 1; }
                         sudo systemctl status ${SERVICE}
 environments:
   Frontandbackend:
