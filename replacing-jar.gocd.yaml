@@ -42,13 +42,13 @@ pipelines:
                         export SFTP_KEY=/var/go/.ssh/id_rsa
                         export SFTP_UPLOADS_DIR=uploads
 
-                        echo "Checking and creating BUILD_DIR if needed..."
-                        if [ ! -d "${BUILD_DIR}" ]; then
-                          echo "BUILD_DIR does not exist. Creating ${BUILD_DIR}..."
-                          mkdir -p "${BUILD_DIR}" || { echo "Failed to create ${BUILD_DIR}"; exit 1; }
+                        echo "Checking if BUILD_DIR exists..."
+                        if [ -d "${BUILD_DIR}" ]; then
+                          echo "BUILD_DIR exists. Removing all contents..."
+                          sudo rm -rf ${BUILD_DIR}/* || { echo "Failed to remove contents in ${BUILD_DIR}"; exit 1; }
                         else
-                          echo "BUILD_DIR exists. Using existing ${BUILD_DIR}..."
-                        fi
+                          echo "BUILD_DIR does not exist. Creating ${BUILD_DIR}..."
+                          sudo mkdir -p "${BUILD_DIR}" || { echo "Failed to create ${BUILD_DIR}"; exit 1; }
 
                         echo "Checking for existing backend files in BUILD_DIR..."
                         if ls "${BUILD_DIR}/ps_be_*.zip" > /dev/null 2>&1; then
