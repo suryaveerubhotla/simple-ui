@@ -97,21 +97,18 @@ pipelines:
                           echo "BACKUP_DIR exists. Using existing ${BACKUP_DIR}..."
                         fi
 
-                        echo "Checking for backend (ps_be)..."
-                        BE_ZIP="${BUILD_DIR}/${BUILD_FILE}"
-                        if [ -z "${BE_ZIP}" ]; then
-                          echo "Specified build file (${BUILD_FILE}) not found in ${BUILD_DIR}!"
-                          exit 1
-                        else
-                          echo "Found backend zip: ${BE_ZIP}"
+                        
                           echo "Unzipping backend.zip..."
-                          sudo unzip -o "${BE_ZIP}" -d "${BE_ARCHIVE_DIR}" || { echo "Failed to unzip ps_be"; exit 1; }
+                          sudo unzip -o "${BUILD_DIR}/${BUILD_FILE}" -d "${BE_ARCHIVE_DIR}" || { echo "Failed to unzip ps_be"; exit 1; }
 
                           JAR_FILE=$(find "${BE_ARCHIVE_DIR}" -type f -name "core-*.jar" | head -n 1)
                           if [ -z "${JAR_FILE}" ]; then
                             echo "No core-*.jar file found in the ps_be zip!"
                             exit 1
                           fi
+
+                          echo "giving permissions for jar"
+                          sudo chown ubuntu:ubuntu #JAR_FILE
 
                           echo "Checking for BE_TARGET_DIR"
                           if [ ! -d "${BE_TARGET_DIR}" ]; then

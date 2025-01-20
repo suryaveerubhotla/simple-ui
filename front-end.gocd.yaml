@@ -45,7 +45,6 @@ pipelines:
                           echo "UI_ARCHIVE directory already exists."
                         fi
 
-                        sudo chmod -R 775 "${UI_ARCHIVE}" || { echo "Failed to set permissions for UI_ARCHIVE"; exit 1; }
                         sudo chown -R ubuntu:ubuntu "${UI_ARCHIVE}" || { echo "Failed to set ownership for UI_ARCHIVE"; exit 1; }
 
                         echo "Fetching UI build from SFTP server..."
@@ -71,14 +70,15 @@ pipelines:
                         echo "Unzipping UI build to UI_TARGET_DIR..."
                         sudo unzip -o "${UI_ARCHIVE}/${BUILD_FILE}" -d "${UI_TARGET_DIR}" || { echo "Failed to unzip UI build"; exit 1; }
 
-                        echo "permissions for environment.json"
-                        sudo chown ubuntu:ubuntu /var/www/html/prime-square/assets/environment/environment.json
-                        sudo chmod 664 /var/www/html/prime-square/assets/environment/environment.json
+
+                        echo "permissions for UI_TARGET_DIR/prime-square"
+                        sudo chown -R root:root UI_TARGET_DIR/prime-square
 
                         echo "Updating target host in configuration files..."
                         echo "Exporting TARGET_HOST: $TARGET_HOST"
-                        sudo sed -i "s|https://ps-targethost:3804/prime-square|http://$TARGET_HOST/prime-square|g" "${UI_TARGET_DIR}/prime-square/main.e1f206db06620922.js" || { echo "Failed to update main.js"; exit 1; }
-                        sudo sed -i "s|https://ps-targethost:3804/prime-square|http://$TARGET_HOST/prime-square|g" "${UI_TARGET_DIR}/prime-square/assets/environment/environment.json" || { echo "Failed to update environment.json"; exit 1; }
+                        sudo sed -i "s|https://ps-targethost:3804|http://$TARGET_HOST|g" "${UI_TARGET_DIR}/prime-square/main.e1f206db06620922.js" || { echo "Failed to update main.js"; exit 1; }
+
+                        sudo sed -i "s|https://ps-targethost:3804|http://$TARGET_HOST|g" "${UI_TARGET_DIR}/prime-square/assets/environment/environment.json" || { echo "Failed to update environment.json"; exit 1; }
 
                         echo "Starting Apache2 service..."
                         sudo systemctl start apache2 || { echo "Failed to start Apache2"; exit 1; }

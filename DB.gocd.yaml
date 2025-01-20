@@ -36,11 +36,25 @@ pipelines:
                         export BUILD_FILE="ps_be_1.1.26_idfc_1.1.13-9f56559-321.zip"
                         export DB_USER=psdbadmin
 
+                         echo "Checking if service ${SERVICE} exists..."
+                        if [ -f /etc/systemd/system/${SERVICE} ]; then
+                          echo "${SERVICE} exists. Checking service status..."
+                          sudo systemctl status ${SERVICE} > /dev/null 2>&1
+                          if [ $? -eq 0 ]; then
+                            echo "${SERVICE} is running. Stopping the service..."
+                            sudo systemctl stop ${SERVICE} || { echo "Failed to stop ${SERVICE}"; exit 1; }
+                          else
+                            echo "${SERVICE} is not running."
+                          fi
+                        else
+                          echo "${SERVICE} does not exist. Proceeding..."
+                        fi
+
                         echo "Creating and setting up DB_DIR..."
                         if [ ! -d "${DB_DIR}" ]; then
                           sudo mkdir -p "${DB_DIR}" || { echo "Failed to create ${DB_DIR}"; exit 1; }
                         fi
-                        sudo chmod -R 755 "${DB_DIR}"
+                        
                         sudo chown -R ubuntu:ubuntu "${DB_DIR}"
 
                         echo "Fetching the specified database build file from SFTP..."
@@ -74,6 +88,11 @@ pipelines:
                         mysql < "${DB_DIR}/database-scripts/dml_insert_scripts.sql" -u ${DB_USER} -p${DB_PASS} || { echo "Failed to execute dml_insert_scripts.sql"; exit 1; }
                         mysql < "${DB_DIR}/database-scripts/ps_index_create.sql" -u ${DB_USER} -p${DB_PASS} || { echo "Failed to execute ps_index_create.sql"; exit 1; }
                         echo "Database setup complete."
+
+                        echo "Starting service..."
+                        sudo systemctl start ${SERVICE} || { echo "Failed to start ${SERVICE}"; exit 1; }
+                        sudo systemctl status ${SERVICE}
+                        
               resources:
                 - ubuntu
               environment_variables:
