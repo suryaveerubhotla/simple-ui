@@ -57,7 +57,7 @@ pipelines:
                        
                         echo "Setting ownership and permissions for directories..."
                     
-                        sudo chown -R ubuntu:ubuntu "${BUILD_DIR}" "${BE_TARGET_DIR}" "${BACKUP_DIR}" "${BE_ARCHIVE_DIR}"
+                        sudo chown -R go:go "${BUILD_DIR}" "${BE_TARGET_DIR}" "${BACKUP_DIR}" "${BE_ARCHIVE_DIR}"
                         sudo chmod -R 775 "${BUILD_DIR}" "${BE_TARGET_DIR}" "${BACKUP_DIR}" "${BE_ARCHIVE_DIR}"
 
 
