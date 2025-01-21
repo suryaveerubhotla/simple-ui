@@ -111,16 +111,6 @@ pipelines:
                         echo "Reloading systemd daemon..."
                         sudo systemctl daemon-reload || { echo "Failed to reload systemd daemon"; exit 1; }
 
-                        
-
-                        echo "Fetching DB password securely..."
-                        DB_PASS=$(cat /var/go/secrets/db_pass)
-                        if [ -z "${DB_PASS}" ]; then
-                          echo "Database password is missing!"
-                          exit 1
-                        fi
-
-                        
                         echo "Starting service..."
                         sudo systemctl start ${SERVICE} || { echo "Failed to start ${SERVICE}"; exit 1; }
                         sudo systemctl status ${SERVICE}
@@ -128,8 +118,7 @@ pipelines:
                         echo "Deployment complete."
               resources:
                 - ubuntu
-              environment_variables:
-                GOCD_ENVIRONMENT: Frontandbackend
+            
 
 environments:
   Frontandbackend:
