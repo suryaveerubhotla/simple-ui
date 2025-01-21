@@ -35,6 +35,7 @@ pipelines:
                         export SFTP_UPLOADS_DIR=uploads
                         export BUILD_FILE="ps_be_1.1.26_idfc_1.1.13-9f56559-321.zip"
                         export DB_USER=psdbadmin
+                        export SERVICE=PrimeSquare.service
 
                          echo "Checking if service ${SERVICE} exists..."
                         if [ -f /etc/systemd/system/${SERVICE} ]; then
@@ -88,6 +89,9 @@ pipelines:
                         mysql < "${DB_DIR}/database-scripts/dml_insert_scripts.sql" -u ${DB_USER} -p${DB_PASS} || { echo "Failed to execute dml_insert_scripts.sql"; exit 1; }
                         mysql < "${DB_DIR}/database-scripts/ps_index_create.sql" -u ${DB_USER} -p${DB_PASS} || { echo "Failed to execute ps_index_create.sql"; exit 1; }
                         echo "Database setup complete."
+                        
+                        echo "Database setup completed, Removing contents."
+                        sudo rm -rf ${DB_DIR} || { echo "Failed to remove contents in ${DB_DIR}"; exit 1; }
 
                         echo "Starting service..."
                         sudo systemctl start ${SERVICE} || { echo "Failed to start ${SERVICE}"; exit 1; }
