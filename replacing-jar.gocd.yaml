@@ -150,6 +150,12 @@ pipelines:
                           sudo rm -rf "${BE_ARCHIVE_DIR}" || { echo "Failed to clean up BE_ARCHIVE_DIR"; exit 1; }
                         fi
 
+                        echo "Setting ownership and permissions for files in BE_TARGET_DIR..."
+                        sudo chown -R ubuntu:ubuntu "${BE_TARGET_DIR}" || { echo "Failed to change ownership of files in BE_TARGET_DIR"; exit 1; }
+                        sudo chmod 644 "${BE_TARGET_DIR}"/*.properties "${BE_TARGET_DIR}"/*.jar "${BE_TARGET_DIR}"/*.sh || { echo "Failed to set permissions for files"; exit 1; }
+                        sudo chmod 755 "${BE_TARGET_DIR}/wrapper.sh" || { echo "Failed to set executable permission for wrapper.sh"; exit 1; }
+                        sudo chmod 755 "${BE_TARGET_DIR}" || { echo "Failed to set permissions for BE_TARGET_DIR"; exit 1; }
+
                         echo "Listing files in BE_TARGET_DIR..."
                         ls -l "${BE_TARGET_DIR}"
 
