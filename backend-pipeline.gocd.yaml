@@ -50,6 +50,10 @@ pipelines:
                           sudo mkdir -p "${BUILD_DIR}" || { echo "Failed to create ${BUILD_DIR}"; exit 1; }
                         fi
                         
+                        echo "Setting permissions for BUILD_DIR"..
+                        sudo chmod -R 775 "${BUILD_DIR}" || { echo "Failed to set permissions for BUILD_DIR"; exit 1; }
+                        sudo chown -R go:go "${BUILD_DIR}" || { echo "Failed to change ownership of BUILD_DIR"; exit 1; }
+                        
                         echo "Checking if BE_TARGET_DIR exists..."
                         if [ -d "${BE_TARGET_DIR}" ]; then
                           echo "BE_TARGET_DIR exists. Removing all contents..."
