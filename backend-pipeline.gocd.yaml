@@ -110,23 +110,6 @@ pipelines:
                           echo "Service file already exists. Skipping copy."
                         fi
 
-                        echo "Fetching DB password securely..."
-                        DB_PASS=$(cat /var/go/secrets/db_pass)
-                        if [ -z "${DB_PASS}" ]; then
-                          echo "Database password is missing!"
-                          exit 1
-                        fi
-                        
-                        echo "Executing database scripts..."
-                        mysql < "${DB_SCRIPTS_DIR}/ddl_drop_schema_script.sql" -u ${DB_USER} -p${DB_PASS} || { echo "Failed to execute ddl_drop_schema_script.sql"; exit 1; }
-                        mysql < "${DB_SCRIPTS_DIR}/idfc_primesquare_workflow_ddl_dml.sql" -u ${DB_USER} -p${DB_PASS} || { echo "Failed to execute primesquare_workflow_ddl_dml.sql"; exit 1; }
-                        mysql < "${DB_SCRIPTS_DIR}/ddl_create_scripts.sql" -u ${DB_USER} -p${DB_PASS} || { echo "Failed to execute ddl_create_scripts.sql"; exit 1; }
-                        mysql < "${DB_SCRIPTS_DIR}/dml_insert_scripts.sql" -u ${DB_USER} -p${DB_PASS} || { echo "Failed to execute dml_insert_scripts.sql"; exit 1; }
-                        mysql < "${DB_SCRIPTS_DIR}/ps_index_create.sql" -u ${DB_USER} -p${DB_PASS} || { echo "Failed to execute ps_index_create.sql"; exit 1; }
-
-
-                        
-
                         echo "Reloading systemd daemon..."
                         sudo systemctl daemon-reload || { echo "Failed to reload systemd daemon"; exit 1; }
 
