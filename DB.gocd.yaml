@@ -33,7 +33,7 @@ pipelines:
                         export SFTP_USER=surya
                         export SFTP_KEY=/var/go/.ssh/id_rsa
                         export SFTP_UPLOADS_DIR=uploads
-                        export BUILD_FILE="ps_be_1.1.26_iifl_1.1.13-5763ce9-791.zip"
+                        export BUILD_FILE="ps_be_1.1.26_idfc_1.1.13-9f56559-321.zip"
                         export DB_USER=psdbadmin
                         export SERVICE=PrimeSquare.service
 
@@ -84,7 +84,7 @@ pipelines:
 
                         echo "Dropping and recreating the database..."
                         mysql < "${DB_DIR}/database-scripts/ddl_drop_schema_script.sql" -u ${DB_USER} -p${DB_PASS} || { echo "Failed to execute ddl_drop_schema_script.sql"; exit 1; }
-                        mysql < "${DB_DIR}/database-scripts/iifl_primesquare_workflow_ddl_dml.sql" -u ${DB_USER} -p${DB_PASS} || { echo "Failed to execute primesquare_workflow_ddl_dml.sql"; exit 1; }
+                        mysql < "${DB_DIR}/database-scripts/idfc_primesquare_workflow_ddl_dml.sql" -u ${DB_USER} -p${DB_PASS} || { echo "Failed to execute primesquare_workflow_ddl_dml.sql"; exit 1; }
                         mysql < "${DB_DIR}/database-scripts/ddl_create_scripts.sql" -u ${DB_USER} -p${DB_PASS} || { echo "Failed to execute ddl_create_scripts.sql"; exit 1; }
                         mysql < "${DB_DIR}/database-scripts/dml_insert_scripts.sql" -u ${DB_USER} -p${DB_PASS} || { echo "Failed to execute dml_insert_scripts.sql"; exit 1; }
                         mysql < "${DB_DIR}/database-scripts/ps_index_create.sql" -u ${DB_USER} -p${DB_PASS} || { echo "Failed to execute ps_index_create.sql"; exit 1; }
