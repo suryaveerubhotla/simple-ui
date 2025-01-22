@@ -4,7 +4,7 @@ pipelines:
     group: frontend-group
     label_template: ${COUNT}
     lock_behavior: none
-    display_order: 2
+    display_order: 3
     materials:
       git-frontend:
         git: https://github.com/suryaveerubhotla/simple-ui.git
