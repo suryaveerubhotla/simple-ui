@@ -35,7 +35,8 @@ pipelines:
                         export SFTP_USER=surya
                         export SFTP_KEY=/var/go/.ssh/id_rsa
                         export SFTP_UPLOADS_DIR=uploads
-                        export BUILD_FILE=ps_ui_1.1.26_idfc_1.1.13-a64f5c1-346.zip
+                        export BUILD_FILE="ps_ui_1.1.26_idfc_1.1.13-a64f5c1-346.zip"
+
                         export TARGET_HOST=172.16.7.109
 
                         echo "Creating UI_ARCHIVE directory if it doesn't exist..."
