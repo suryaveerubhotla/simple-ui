@@ -76,7 +76,7 @@ pipelines:
 
                         echo "Updating target host in configuration files..."
                         echo "Exporting TARGET_HOST: $TARGET_HOST"
-                        sudo sed -i "s|https://ps-targethost:3804|http://$TARGET_HOST|g" "${UI_TARGET_DIR}/prime-square/main.*.js " || { echo "Failed to update main.js"; exit 1; }
+                        sudo sed -i "s|https://ps-targethost:3804|http://$TARGET_HOST|g" "${UI_TARGET_DIR}/prime-square/main.e1f206db06620922.js " || { echo "Failed to update main.js"; exit 1; }
 
                         sudo sed -i "s|https://ps-targethost:3804|http://$TARGET_HOST|g" "${UI_TARGET_DIR}/prime-square/assets/environment/environment.json" || { echo "Failed to update environment.json"; exit 1; }
 
