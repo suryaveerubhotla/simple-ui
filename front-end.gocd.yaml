@@ -35,7 +35,7 @@ pipelines:
                         export SFTP_USER=surya
                         export SFTP_KEY=/var/go/.ssh/id_rsa
                         export SFTP_UPLOADS_DIR=uploads
-                        export BUILD_FILE="ps_ui_1.1.26_idfc_1.1.13-a64f5c1-346.zip"
+                        export BUILD_FILE=ps_ui_1.1.26_idfc_1.1.13-868acb3-344.zip
                         export TARGET_HOST=172.16.7.109
 
                         echo "Creating UI_ARCHIVE directory if it doesn't exist..."
@@ -72,11 +72,11 @@ pipelines:
 
 
                         echo "permissions for UI_TARGET_DIR/prime-square"
-                        sudo chown -R root:root "${UI_TARGET_DIR}/prime-square"
+                        sudo chown -R root:root UI_TARGET_DIR/prime-square
 
                         echo "Updating target host in configuration files..."
                         echo "Exporting TARGET_HOST: $TARGET_HOST"
-                        sudo sed -i "s|https://ps-targethost:3804|http://$TARGET_HOST|g" "${UI_TARGET_DIR}/prime-square/main.e1f206db06620922.js " || { echo "Failed to update main.js"; exit 1; }
+                        sudo sed -i "s|https://ps-targethost:3804|http://$TARGET_HOST|g" "${UI_TARGET_DIR}/prime-square/main.e1f206db06620922.js" || { echo "Failed to update main.js"; exit 1; }
 
                         sudo sed -i "s|https://ps-targethost:3804|http://$TARGET_HOST|g" "${UI_TARGET_DIR}/prime-square/assets/environment/environment.json" || { echo "Failed to update environment.json"; exit 1; }
 
