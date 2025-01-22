@@ -83,7 +83,7 @@ pipelines:
                         cd ${SFTP_UPLOADS_DIR}
                         get ${BUILD_FILE} ${BUILD_DIR}/
                         bye
-                        EOFsur
+                        EOF
 
 
                         if [ $? -ne 0 ]; then
