@@ -72,7 +72,7 @@ pipelines:
 
 
                         echo "permissions for UI_TARGET_DIR/prime-square"
-                        sudo chown -R root:root UI_TARGET_DIR/prime-square
+                        sudo chown -R root:root "${UI_TARGET_DIR}/prime-square"
 
                         echo "Updating target host in configuration files..."
                         echo "Exporting TARGET_HOST: $TARGET_HOST"
