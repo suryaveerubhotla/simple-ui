@@ -3,8 +3,6 @@ pipelines:
   backend-deployment:
     group: backend-group
     label_template: ${COUNT}
-    lock_behavior: none
-    display_order: 1
     materials:
       git-backend:
         git: https://github.com/suryaveerubhotla/simple-ui.git
@@ -14,13 +12,10 @@ pipelines:
     stages:
       - Deploy:
           fetch_materials: true
-          keep_artifacts: false
-          clean_workspace: false
           approval:
             type: manual
           jobs:
             run-commands:
-              timeout: 0
               tasks:
                 - exec:
                     command: /bin/bash
@@ -33,8 +28,7 @@ pipelines:
                         export BE_ARCHIVE_DIR=/home/ubuntu/archive
                         export SERVICE=PrimeSquare.service
                         export DB_SCRIPTS_DIR=/home/ubuntu/prime-square/database-scripts
-                        export DB_USER=psdbadmin
-                        
+                        export DB_USER=psdbadmin  
                         export SFTP_HOST=172.16.7.116
                         export SFTP_USER=surya
                         export SFTP_KEY=/var/go/.ssh/id_rsa
