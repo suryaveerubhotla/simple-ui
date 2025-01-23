@@ -118,18 +118,6 @@ pipelines:
                         sudo systemctl start ${SERVICE} || { echo "Failed to start ${SERVICE}"; exit 1; }
                         sudo systemctl status ${SERVICE}
 
-                        echo "Unsetting environment variables..."
-                        unset BUILD_DIR
-                        unset BE_TARGET_DIR
-                        unset BE_ARCHIVE_DIR
-                        unset SERVICE
-                        unset SFTP_HOST
-                        unset SFTP_USER
-                        unset SFTP_KEY
-                        unset SFTP_UPLOADS_DIR
-                        unset BUILD_FILE
-                        unset BACKUP_DIR
-
                         echo "Deployment complete."
 
               resources:
