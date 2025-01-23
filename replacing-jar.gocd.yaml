@@ -57,17 +57,14 @@ pipelines:
                           echo "BE_ARCHIVE_DIR exists. Using existing ${BE_ARCHIVE_DIR}..."
                         fi
 
-                        echo "Checking for BACKUP_DIR"
-                        if [ ! -d "${BACKUP_DIR}" ]; then
-                          echo "BACKUP_DIR does not exist. Creating ${BACKUP_DIR}..."
-                         sudo mkdir -p "${BACKUP_DIR}" || { echo "Failed to create ${BACKUP_DIR}"; exit 1; }
-                        else
-                          echo "BACKUP_DIR exists. Using existing ${BACKUP_DIR}..."
-                        fi
+                        echo "creating backup dir with timestamp"
+                        TIMESTAMP=$(date +%Y%m%d_%H_%M)
+                        BACKUP_DIR_WITH_TIMESTAMP="${BACKUP_DIR}_${TIMESTAMP}"
+                        echo "Creating backup directory with timestamp: ${BACKUP_DIR_WITH_TIMESTAMP}..."
+                        sudo mkdir -p "${BACKUP_DIR_WITH_TIMESTAMP}" || { echo "Failed to create backup directory ${BACKUP_DIR_WITH_TIMESTAMP}"; exit 1; }
                        
                         echo "Setting ownership and permissions for directories..."
-                    
-                        sudo chown -R go:go "${BUILD_DIR}" "${BE_TARGET_DIR}" "${BACKUP_DIR}" "${BE_ARCHIVE_DIR}"
+                        sudo chown -R go:go "${BUILD_DIR}" "${BE_TARGET_DIR}" "${BACKUP_DIR}" "${BE_ARCHIVE_DIR}" "${BACKUP_DIR_WITH_TIMESTAMP}""
 
                         echo "Accessing SFTP machine to fetch the backend zip file..."
                         sftp -o StrictHostKeyChecking=no -i "${SFTP_KEY}" "${SFTP_USER}@${SFTP_HOST}" <<EOF
@@ -123,7 +120,7 @@ pipelines:
                           if [ -n "${JAR_FILES}" ]; then
                             echo "Found JAR files in BE_TARGET_DIR. Moving to BACKUP_DIR..."
                             for jar in ${JAR_FILES}; do
-                              sudo mv "$jar" "${BACKUP_DIR}" || { echo "Failed to move $jar to BACKUP_DIR."; exit 1; }
+                              sudo mv "$jar" "${BACKUP_DIR_WITH_TIMESTAMP}" || { echo "Failed to move $jar to ${BACKUP_DIR_WITH_TIMESTAMP}."; exit 1; }
                             done
                           else
                             echo "No JAR files found in BE_TARGET_DIR to move."
