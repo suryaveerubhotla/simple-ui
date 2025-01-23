@@ -64,7 +64,7 @@ pipelines:
                         sudo mkdir -p "${BACKUP_DIR_WITH_TIMESTAMP}" || { echo "Failed to create backup directory ${BACKUP_DIR_WITH_TIMESTAMP}"; exit 1; }
                        
                         echo "Setting ownership and permissions for directories..."
-                        sudo chown -R go:go "${BUILD_DIR}" "${BE_TARGET_DIR}" "${BACKUP_DIR}" "${BE_ARCHIVE_DIR}" "${BACKUP_DIR_WITH_TIMESTAMP}""
+                        sudo chown -R go:go "${BUILD_DIR}" "${BE_TARGET_DIR}" "${BACKUP_DIR}" "${BE_ARCHIVE_DIR}" "${BACKUP_DIR_WITH_TIMESTAMP}"
 
                         echo "Accessing SFTP machine to fetch the backend zip file..."
                         sftp -o StrictHostKeyChecking=no -i "${SFTP_KEY}" "${SFTP_USER}@${SFTP_HOST}" <<EOF
