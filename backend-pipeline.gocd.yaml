@@ -26,14 +26,13 @@ pipelines:
                         export BUILD_DIR=/home/ubuntu/builds
                         export BE_TARGET_DIR=/home/ubuntu/prime-square
                         export BE_ARCHIVE_DIR=/home/ubuntu/archive
-                        export SERVICE=PrimeSquare.service
-                        export DB_SCRIPTS_DIR=/home/ubuntu/prime-square/database-scripts
-                        export DB_USER=psdbadmin  
+                        export SERVICE=PrimeSquare.service  
                         export SFTP_HOST=172.16.12.106
                         export SFTP_USER=surya
                         export SFTP_KEY=/var/go/.ssh/id_rsa
                         export SFTP_UPLOADS_DIR=uploads
                         export BUILD_FILE="ps_be_1.1.26_idfc_1.1.13-9f56559-321.zip"
+                        export BACKUP_DIR=/home/ubuntu/prime-square-backup
 
                         echo "Checking if BUILD_DIR exists..."
                         if [ -d "${BUILD_DIR}" ]; then
@@ -47,11 +46,20 @@ pipelines:
                         echo "Setting permissions for BUILD_DIR"..
                         sudo chmod -R 775 "${BUILD_DIR}" || { echo "Failed to set permissions for BUILD_DIR"; exit 1; }
                         sudo chown -R go:go "${BUILD_DIR}" || { echo "Failed to change ownership of BUILD_DIR"; exit 1; }
+
+                        echo "Checking for BACKUP_DIR"
+                        if [ ! -d "${BACKUP_DIR}" ]; then
+                          echo "BACKUP_DIR does not exist. Creating ${BACKUP_DIR}..."
+                         sudo mkdir -p "${BACKUP_DIR}" || { echo "Failed to create ${BACKUP_DIR}"; exit 1; }
+                        else
+                          echo "BACKUP_DIR exists. Using existing ${BACKUP_DIR}..."
+                        fi
+
                         
                         echo "Checking if BE_TARGET_DIR exists..."
                         if [ -d "${BE_TARGET_DIR}" ]; then
-                          echo "BE_TARGET_DIR exists. Removing all contents..."
-                          sudo rm -rf ${BE_TARGET_DIR}/* || { echo "Failed to remove contents in ${BE_TARGET_DIR}"; exit 1; }
+                          echo "BE_TARGET_DIR exists. moving all contents from BE_TARGET_DIR to BACKUP_DIR..."
+                          sudo mv ${BE_TARGET_DIR}/* "${BACKUP_DIR}" || { echo "Failed to move contents in ${BE_TARGET_DIR} to ${BACKUP_DIR}"; exit 1; }
                         else
                           echo "BE_TARGET_DIR does not exist. Creating ${BE_TARGET_DIR}..."
                           sudo mkdir -p "${BE_TARGET_DIR}" || { echo "Failed to create ${BE_TARGET_DIR}"; exit 1; }
