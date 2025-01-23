@@ -3,8 +3,6 @@ pipelines:
   replacing-jar:
     group: deployment-group
     label_template: ${COUNT}
-    lock_behavior: none
-    display_order: 4
     materials:
       git-c05074b:
         git: https://github.com/suryaveerubhotla/simple-ui.git
@@ -14,14 +12,11 @@ pipelines:
     stages:
       - Deploy-and-test:
           fetch_materials: true
-          keep_artifacts: false
-          clean_workspace: false
           approval:
             type: manual
             allow_only_on_success: false
           jobs:
             run-commands:
-              timeout: 0
               tasks:
                 - exec:
                     command: /bin/bash
