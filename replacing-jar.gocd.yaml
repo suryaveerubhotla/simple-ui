@@ -57,12 +57,20 @@ pipelines:
                           echo "BE_ARCHIVE_DIR exists. Using existing ${BE_ARCHIVE_DIR}..."
                         fi
 
-                        echo "creating backup dir with timestamp"
+                        echo "Creating backup dir with timestamp"
                         TIMESTAMP=$(date +%Y%m%d_%H_%M)
                         BACKUP_DIR_WITH_TIMESTAMP="${BACKUP_DIR}_${TIMESTAMP}"
                         echo "Creating backup directory with timestamp: ${BACKUP_DIR_WITH_TIMESTAMP}..."
                         sudo mkdir -p "${BACKUP_DIR_WITH_TIMESTAMP}" || { echo "Failed to create backup directory ${BACKUP_DIR_WITH_TIMESTAMP}"; exit 1; }
-                       
+
+                        echo "Checking and creating BACKUP_DIR if needed..."
+                        if [ ! -d "${BACKUP_DIR}" ]; then
+                          echo "BACKUP_DIR does not exist. Creating ${BACKUP_DIR}..."
+                          sudo mkdir -p "${BACKUP_DIR}" || { echo "Failed to create ${BACKUP_DIR}"; exit 1; }
+                        else
+                          echo "BACKUP_DIR exists. Using existing ${BACKUP_DIR}..."
+                        fi
+
                         echo "Setting ownership and permissions for directories..."
                         sudo chown -R go:go "${BUILD_DIR}" "${BE_TARGET_DIR}" "${BACKUP_DIR}" "${BE_ARCHIVE_DIR}" "${BACKUP_DIR_WITH_TIMESTAMP}"
 
