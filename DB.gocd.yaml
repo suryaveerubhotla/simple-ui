@@ -3,8 +3,6 @@ pipelines:
   database-deployment:
     group: DB-group
     label_template: ${COUNT}
-    lock_behavior: none
-    display_order: 2
     materials:
       git-database:
         git: https://github.com/suryaveerubhotla/simple-ui.git
@@ -14,13 +12,10 @@ pipelines:
     stages:
       - SetupDB:
           fetch_materials: true
-          keep_artifacts: false
-          clean_workspace: false
           approval:
             type: manual
           jobs:
             setup-database:
-              timeout: 0
               tasks:
                 - exec:
                     command: /bin/bash
