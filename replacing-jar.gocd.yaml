@@ -1,7 +1,7 @@
 format_version: 10
 pipelines:
   replacing-jar:
-    group: deployment-group
+    group: Replacing-jar-group
     label_template: ${COUNT}
     materials:
       git-c05074b:
