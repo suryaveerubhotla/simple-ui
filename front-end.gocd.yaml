@@ -15,7 +15,7 @@ pipelines:
           approval:
             type: manual
           jobs:
-            run-commands:
+            Deploy-Frontend:
               tasks:
                 - exec:
                     command: /bin/bash

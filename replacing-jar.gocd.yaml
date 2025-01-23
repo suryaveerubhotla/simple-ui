@@ -16,7 +16,7 @@ pipelines:
             type: manual
             allow_only_on_success: false
           jobs:
-            run-commands:
+            Replace-Jar:
               tasks:
                 - exec:
                     command: /bin/bash
