@@ -10,7 +10,7 @@ pipelines:
         auto_update: true
         branch: main
     stages:
-      - Deploy-and-test:
+      - Replace-Jar:
           fetch_materials: true
           approval:
             type: manual
@@ -30,8 +30,6 @@ pipelines:
                         export BE_ARCHIVE_DIR=/home/ubuntu/archive/
                         export SERVICE=PrimeSquare.service
                         export DB_SCRIPTS_DIR=/home/ubuntu/prime-square/database-scripts
-                        export DB_USER=psdbadmin
-                        export DB_PASS=6%EOm@Te1sb19Th6
                         export SFTP_HOST=172.16.7.116
                         export SFTP_USER=surya
                         export SFTP_KEY=/var/go/.ssh/id_rsa
@@ -95,8 +93,6 @@ pipelines:
                         else
                           echo "${SERVICE} does not exist. Proceeding..."
                         fi
-
-                        
 
                         echo "Checking for backend (ps_be)..."
                         BE_ZIP=$(ls ${BUILD_DIR}/ps_be*.zip 2>/dev/null | head -n 1)
