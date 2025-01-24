@@ -16,16 +16,14 @@ pipelines:
             type: manual
           jobs:
             Deploy-BE:
+              environment_variables:
+                <<: *environment_variables
               tasks:
                 - exec:
                     command: /bin/bash
                     arguments:
                       - -c
                       - |
-                        echo "Loading environment variables from env_vars.yaml..."
-                        eval $(yq e '.environment_variables | to_entries | .[] | "export " + .key + "=" + (.value|@sh)' env_vars.yaml)
-
-                        echo "Environment variables loaded."
 
                         echo "Checking if BUILD_DIR exists..."
                         if [ -d "${BUILD_DIR}" ]; then
@@ -43,6 +41,7 @@ pipelines:
                         echo "creating backup dir with timestamp"
                         TIMESTAMP=$(date +%Y%m%d_%H_%M)
                         BACKUP_DIR_WITH_TIMESTAMP="${BACKUP_DIR}_${TIMESTAMP}"
+                        
                         echo "Creating backup directory with timestamp: ${BACKUP_DIR_WITH_TIMESTAMP}..."
                         sudo mkdir -p "${BACKUP_DIR_WITH_TIMESTAMP}" || { echo "Failed to create backup directory ${BACKUP_DIR_WITH_TIMESTAMP}"; exit 1; }
                         

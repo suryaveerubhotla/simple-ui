@@ -1,11 +1,13 @@
-environment_variables:
-  BUILD_DIR: /home/ubuntu/builds
-  BE_TARGET_DIR: /home/ubuntu/prime-square
-  BE_ARCHIVE_DIR: /home/ubuntu/archive
-  SERVICE: PrimeSquare.service
-  SFTP_HOST: 172.16.7.116
-  SFTP_USER: surya
-  SFTP_KEY: /var/go/.ssh/id_rsa
-  SFTP_UPLOADS_DIR: uploads
-  BUILD_FILE: ps_be_1.1.26_idfc_1.1.13-8b07db6-319.zip
-  BACKUP_DIR: /home/ubuntu/prime-square-backup
+format_version: 10
+common:
+  environment_variables:
+    BUILD_DIR: /home/ubuntu/builds
+    BE_TARGET_DIR: /home/ubuntu/prime-square
+    BE_ARCHIVE_DIR: /home/ubuntu/archive
+    SERVICE: PrimeSquare.service
+    SFTP_HOST: 172.16.7.116
+    SFTP_USER: surya
+    SFTP_KEY: /var/go/.ssh/id_rsa
+    SFTP_UPLOADS_DIR: uploads
+    BUILD_FILE: ps_be_1.1.26_idfc_1.1.13-8b07db6-319.zip
+    BACKUP_DIR: /home/ubuntu/prime-square-backup
