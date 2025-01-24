@@ -128,26 +128,26 @@ pipelines:
                           if [ -n "${JAR_FILES}" ]; then
                             echo "Found JAR files in BE_TARGET_DIR. Moving to BACKUP_DIR..."
                             for jar in ${JAR_FILES}; do
-                              sudo mv "$jar" "${BACKUP_DIR_WITH_TIMESTAMP}" || { echo "Failed to move $jar to ${BACKUP_DIR_WITH_TIMESTAMP}."; exit 1; }
+                              sudo mv "$jar" "" || { echo "Failed to move $jar to ${BACKUP_DIR_WITH_TIMESTAMP}."; exit 1; }
                             done
                           else
                             echo "No JAR files found in BE_TARGET_DIR to move."
                           fi
                         else
-                          echo "BE_TARGET_DIR does not exist. Nothing to move."
+                          echo "BE_TARGET_DIR does not exist. Nothin${BACKUP_DIR_WITH_TIMESTAMP}g to move."
                         fi
 
                           echo "Copying new JAR file to BE_TARGET_DIR..."
                           sudo cp "${JAR_FILE}" "${BE_TARGET_DIR}" || { echo "Failed to copy JAR file"; exit 1; }
                           echo "Setting ownership and permissions for files in BE_TARGET_DIR..."
-                        sudo chown -R ubuntu:ubuntu "${JAR_FILE}" || { echo "Failed to change ownership of files in BE_TARGET_DIR"; exit 1; }
+                        sudo chown -R ubuntu:ubuntu "${JAR_FILE}"  || { echo "Failed to change ownership of files in BE_TARGET_DIR"; exit 1; }
 
                           echo "Cleaning up BE_ARCHIVE_DIR..."
                           sudo rm -rf "${BE_ARCHIVE_DIR}" || { echo "Failed to clean up BE_ARCHIVE_DIR"; exit 1; }
                         fi
 
                         echo "Setting ownership and permissions for files in BE_TARGET_DIR..."
-                        sudo chown -R ubuntu:ubuntu "${BE_TARGET_DIR}" || { echo "Failed to change ownership of files in BE_TARGET_DIR"; exit 1; }
+                        sudo chown -R ubuntu:ubuntu "${BE_TARGET_DIR}" ${BACKUP_DIR_WITH_TIMESTAMP} || { echo "Failed to change ownership of files in BE_TARGET_DIR"; exit 1; }
                         sudo chmod 644 "${BE_TARGET_DIR}"/*.properties "${BE_TARGET_DIR}"/*.jar "${BE_TARGET_DIR}"/*.sh || { echo "Failed to set permissions for files"; exit 1; }
                         sudo chmod 755 "${BE_TARGET_DIR}/wrapper.sh" || { echo "Failed to set executable permission for wrapper.sh"; exit 1; }
                         sudo chmod 755 "${BE_TARGET_DIR}" || { echo "Failed to set permissions for BE_TARGET_DIR"; exit 1; }
