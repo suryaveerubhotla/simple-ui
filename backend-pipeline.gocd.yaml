@@ -22,17 +22,10 @@ pipelines:
                     arguments:
                       - -c
                       - |
-                        echo "Exporting environment variables..."
-                        export BUILD_DIR=/home/ubuntu/builds
-                        export BE_TARGET_DIR=/home/ubuntu/prime-square
-                        export BE_ARCHIVE_DIR=/home/ubuntu/archive
-                        export SERVICE=PrimeSquare.service  
-                        export SFTP_HOST=172.16.7.116
-                        export SFTP_USER=surya
-                        export SFTP_KEY=/var/go/.ssh/id_rsa
-                        export SFTP_UPLOADS_DIR=uploads
-                        export BUILD_FILE="ps_be_1.1.26_idfc_1.1.13-8b07db6-319.zip"
-                        export BACKUP_DIR=/home/ubuntu/prime-square-backup
+                        echo "Loading environment variables from env_vars.yaml..."
+                        eval $(yq e '.environment_variables | to_entries | .[] | "export " + .key + "=" + (.value|@sh)' env_vars.yaml)
+
+                        echo "Environment variables loaded."
 
                         echo "Checking if BUILD_DIR exists..."
                         if [ -d "${BUILD_DIR}" ]; then
@@ -117,6 +110,9 @@ pipelines:
                         echo "Starting service..."
                         sudo systemctl start ${SERVICE} || { echo "Failed to start ${SERVICE}"; exit 1; }
                         sudo systemctl status ${SERVICE}
+
+                        echo "Unsetting environment variables..."
+                        unset BUILD_DIR BE_TARGET_DIR BE_ARCHIVE_DIR SERVICE SFTP_HOST SFTP_USER SFTP_KEY SFTP_UPLOADS_DIR BUILD_FILE BACKUP_DIR
 
                         echo "Deployment complete."
 
