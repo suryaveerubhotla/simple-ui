@@ -111,7 +111,7 @@ pipelines:
                         sudo systemctl status ${SERVICE}
 
                         echo "Unsetting environment variables..."
-                        unset BUILD_DIR BE_TARGET_DIR BE_ARCHIVE_DIR SERVICE SFTP_HOST SFTP_USER SFTP_KEY SFTP_UPLOADS_DIR BUILD_FILE BACKUP_DIR
+                        unset ${ENV_VARS_SCRIPT}
 
                         echo "Deployment complete."
 
