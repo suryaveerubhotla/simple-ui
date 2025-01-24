@@ -124,11 +124,11 @@ pipelines:
 
                           echo "Moving existing JAR files from BE_TARGET_DIR to BACKUP_DIR..."
                         if [ -d "${BE_TARGET_DIR}" ]; then
-                          JAR_FILES=$(find "${BE_TARGET_DIR}" -maxdepth 1 -type f -name "core-*.jar")
-                          if [ -n "${JAR_FILES}" ]; then
+                          Backup_JAR_FILES=$(find "${BE_TARGET_DIR}" -maxdepth 1 -type f -name "core-*.jar")
+                          if [ -n "${Backup_JAR_FILES}" ]; then
                             echo "Found JAR files in BE_TARGET_DIR. Moving to BACKUP_DIR..."
-                            for jar in ${JAR_FILES}; do
-                              sudo mv "$jar" "" || { echo "Failed to move $jar to ${BACKUP_DIR_WITH_TIMESTAMP}."; exit 1; }
+                            for jar in ${Backup_JAR_FILES}; do
+                              sudo mv "$jar" "${BACKUP_DIR_WITH_TIMESTAMP}" || { echo "Failed to move $jar to ${BACKUP_DIR_WITH_TIMESTAMP}."; exit 1; }
                             done
                           else
                             echo "No JAR files found in BE_TARGET_DIR to move."
