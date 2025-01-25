@@ -25,7 +25,7 @@ pipelines:
                       - -c
                       - |
                         source ${ENV_VARS_SCRIPT}
-                        export BUILD_FILE="ps_be_1.1.26_idfc_1.1.13-9f56559-321.zip"
+                        export BUILD_FILE="ps_be_1.1.26_idfc_1.1.13-8b07db6-319.zip"
                          echo "Exporting Build file ${BUILD_FILE}..."
 
                          echo "Checking if service ${SERVICE} exists..."

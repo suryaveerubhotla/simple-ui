@@ -25,7 +25,7 @@ pipelines:
                       - -c
                       - |
                         source ${ENV_VARS_SCRIPT}
-                        export BUILD_FILE="ps_ui_1.1.26_idfc_1.1.13-a64f5c1-346.zip"
+                        export BUILD_FILE="ps_ui_1.1.26_idfc_1.1.13-868acb3-344.zip"
                          echo "Exporting Build file ${BUILD_FILE}..."
 
                         echo "Creating UI_ARCHIVE directory if it doesn't exist..."
