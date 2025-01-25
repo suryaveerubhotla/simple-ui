@@ -4,7 +4,6 @@
 export BUILD_DIR=/home/ubuntu/builds
 export BE_TARGET_DIR=/home/ubuntu/prime-square
 export BE_ARCHIVE_DIR=/home/ubuntu/archive
-export BACKUP_DIR=/home/ubuntu/prime-square-backup
 export SERVICE=PrimeSquare.service
 export SFTP_HOST=192.168.56.106
 export SFTP_USER=surya
@@ -16,4 +15,3 @@ export DB_USER=psdbadmin
 export UI_TARGET_DIR=/var/www/html
 export UI_ARCHIVE=/home/ubuntu/ui-archive
 export TARGET_HOST=192.168.56.105
-export BACKUP_DIR=/home/ubuntu/jar-backup

@@ -17,24 +17,19 @@ pipelines:
             allow_only_on_success: false
           jobs:
             Replace-Jar:
+              environment_variables:
+                ENV_VARS_SCRIPT: env_vars.sh
               tasks:
                 - exec:
                     command: /bin/bash
                     arguments:
                       - -c
                       - |
-                        echo "Exporting environment variables..."
-                        export BUILD_DIR=/home/ubuntu/builds
-                        export BE_TARGET_DIR=/home/ubuntu/prime-square
+                        source ${ENV_VARS_SCRIPT}
                         export BACKUP_DIR=/home/ubuntu/jar-backup
-                        export BE_ARCHIVE_DIR=/home/ubuntu/archive/
-                        export SERVICE=PrimeSquare.service
-                        export DB_SCRIPTS_DIR=/home/ubuntu/prime-square/database-scripts
-                        export SFTP_HOST=172.16.7.116
-                        export SFTP_USER=surya
-                        export SFTP_KEY=/var/go/.ssh/id_rsa
-                        export SFTP_UPLOADS_DIR=uploads
                         export BUILD_FILE="ps_be_1.1.26_idfc_1.1.13-8b07db6-319.zip"
+
+                        echo "Exporting Build file ${BUILD_FILE}..."
                         
 
                         echo "Checking and creating BUILD_DIR if needed..."

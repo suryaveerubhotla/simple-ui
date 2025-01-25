@@ -26,9 +26,10 @@ pipelines:
                       - |
                         source ${ENV_VARS_SCRIPT}
                         export BUILD_FILE="ps_be_1.1.26_idfc_1.1.13-9f56559-321.zip"
+                        export BACKUP_DIR=/home/ubuntu/prime-square-backup
 
                         echo exporting build file "${BUILD_FILE}"
-                        
+
                         echo "Checking if BUILD_DIR exists..."
                         if [ -d "${BUILD_DIR}" ]; then
                           echo "BUILD_DIR exists. Removing all contents..."
