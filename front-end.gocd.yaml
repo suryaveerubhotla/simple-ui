@@ -16,22 +16,15 @@ pipelines:
             type: manual
           jobs:
             Deploy-Frontend:
+              environment_variables:
+                ENV_VARS_SCRIPT: env_vars.sh
               tasks:
                 - exec:
                     command: /bin/bash
                     arguments:
                       - -c
                       - |
-                        echo "Exporting environment variables..."
-                        export UI_TARGET_DIR=/var/www/html
-                        export UI_ARCHIVE=/home/ubuntu/ui-archive
-                        export SERVICE=PrimeSquare.service
-                        export SFTP_HOST=172.16.7.116
-                        export SFTP_USER=surya
-                        export SFTP_KEY=/var/go/.ssh/id_rsa
-                        export SFTP_UPLOADS_DIR=uploads
-                        export BUILD_FILE=ps_ui_1.1.26_idfc_1.1.13-868acb3-344.zip
-                        export TARGET_HOST=172.16.7.109
+                        source ${ENV_VARS_SCRIPT}
 
                         echo "Creating UI_ARCHIVE directory if it doesn't exist..."
                         if [ ! -d "${UI_ARCHIVE}" ]; then
