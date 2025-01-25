@@ -10,7 +10,6 @@ export SFTP_HOST=192.168.56.106
 export SFTP_USER=surya
 export SFTP_KEY=/var/go/.ssh/id_rsa
 export SFTP_UPLOADS_DIR=uploads
-export BUILD_FILE="ps_be_1.1.26_idfc_1.1.13-8b07db6-319.zip"
 export DB_DIR=/home/ubuntu/database
 export DB_SCRIPTS_DIR=/home/ubuntu/prime-square/database-scripts
 export DB_USER=psdbadmin

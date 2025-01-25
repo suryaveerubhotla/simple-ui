@@ -5,7 +5,7 @@ pipelines:
     label_template: ${COUNT}
     materials:
       git-backend:
-        git: https://bitbucket.org/tejora1/primesquare-devops-be-cd/gocd.git
+        git: https://github.com/suryaveerubhotla/simple-ui.git
         shallow_clone: false
         auto_update: true
         branch: main
@@ -25,6 +25,7 @@ pipelines:
                       - -c
                       - |
                         source ${ENV_VARS_SCRIPT}
+                        export BUILD_FILE="ps_be_1.1.26_idfc_1.1.13-8b07db6-319.zip"
                         echo "Checking if BUILD_DIR exists..."
                         if [ -d "${BUILD_DIR}" ]; then
                           echo "BUILD_DIR exists. Removing all contents..."
