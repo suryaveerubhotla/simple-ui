@@ -5,7 +5,7 @@ pipelines:
     label_template: ${COUNT}
     materials:
       git-backend:
-        git: https://github.com/suryaveerubhotla/simple-ui.git
+        git: https://bitbucket.org/tejora1/primesquare-devops-be-cd/gocd.git
         shallow_clone: false
         auto_update: true
         branch: main

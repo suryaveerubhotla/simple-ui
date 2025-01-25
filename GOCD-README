@@ -1,0 +1,150 @@
+# GoCD Setup and Configuration
+
+GoCD is a continuous integration and continuous delivery (CI/CD) tool designed to help automate the software delivery process. It enables teams to build, test, and deploy applications in a streamlined and efficient manner.
+
+---
+
+## Key Concepts in GoCD
+
+### GoCD Server
+- The central component that orchestrates tasks, defines pipelines, manages agents, and provides a UI for managing the CI/CD process.
+- Responsible for pipeline configuration, viewing logs, and monitoring jobs.
+
+### GoCD Agent
+- Installed on separate machines or nodes.
+- Listens for tasks from the GoCD server and executes them, such as compiling code, running tests, or deploying applications.
+
+---
+
+## GoCD Server Installation
+
+```bash
+sudo install -m 0755 -d /etc/apt/keyrings
+curl https://download.gocd.org/GOCD-GPG-KEY.asc | sudo gpg --dearmor -o /etc/apt/keyrings/gocd.gpg
+sudo chmod a+r /etc/apt/keyrings/gocd.gpg
+echo "deb [signed-by=/etc/apt/keyrings/gocd.gpg] https://download.gocd.org /" | sudo tee /etc/apt/sources.list.d/gocd.list
+sudo apt-get update
+sudo apt-get install --install-recommends go-server
+sudo systemctl start go-server
+sudo systemctl enable go-server
+sudo systemctl status go-server
+```
+
+Access the GoCD server at: `http://<server-ip>:8153`
+
+---
+
+## GoCD Agent Installation
+
+```bash
+sudo install -m 0755 -d /etc/apt/keyrings
+curl https://download.gocd.org/GOCD-GPG-KEY.asc | sudo gpg --dearmor -o /etc/apt/keyrings/gocd.gpg
+sudo chmod a+r /etc/apt/keyrings/gocd.gpg
+echo "deb [signed-by=/etc/apt/keyrings/gocd.gpg] https://download.gocd.org /" | sudo tee /etc/apt/sources.list.d/gocd.list
+sudo apt-get update
+sudo apt-get install --install-recommends go-agent
+sudo systemctl start go-agent
+sudo systemctl enable go-agent
+sudo systemctl status go-agent
+```
+
+### Configuring GoCD Agent
+1. Open the configuration file:
+   ```bash
+   sudo nano /usr/share/go-agent/wrapper-config/wrapper-properties.conf
+   ```
+
+2. Set the GoCD Server URL:
+   ```bash
+   wrapper.app.parameter.1=-serverUrl http://<server-ip>:8153/go
+   ```
+
+3. Restart the GoCD Agent:
+   ```bash
+   sudo service go-agent restart
+   ```
+
+4. Check logs if the agent doesn't connect:
+   ```bash
+   tail -f /var/log/go-agent/go-agent.log
+   ```
+
+---
+
+## Major Components in GoCD UI
+
+1. **Dashboard**: Provides an overview of pipelines and their statuses.
+2. **Pipelines**: Central area for defining and managing pipelines.
+3. **Environments**: Manage environment-specific configurations (e.g., Dev, QA, Prod).
+4. **Agents**: Monitor and manage GoCD agents.
+5. **Value Stream Map (VSM)**: Visualize the flow of artifacts through pipelines.
+6. **Administration**: Manage global server settings.
+7. **Plugins**: Extend functionality using plugins.
+8. **Artifacts**: Manage and store pipeline outputs.
+9. **Pipeline History**: View detailed execution history.
+10. **Monitoring and Logs**: Insights into server and pipeline activities.
+
+---
+
+## Steps for Passwordless SSH Authentication
+
+1. **Generate an SSH Key Pair on GoCD Server/Agent Machine**
+   ```bash
+   ssh-keygen -t rsa -b 2048
+   ```
+   - Creates `id_rsa` (private key) and `id_rsa.pub` (public key).
+
+2. **Copy the Public Key to the SFTP Machine**
+   ```bash
+   ssh-copy-id -i ~/.ssh/id_rsa.pub user@sftp-ip
+   ```
+
+   Alternatively, manually copy the key:
+   ```bash
+   cat ~/.ssh/id_rsa.pub
+   ssh user@sftp-ip
+   mkdir -p ~/.ssh
+   nano ~/.ssh/authorized_keys
+   ```
+   - Paste the public key into `authorized_keys`.
+
+   Set permissions:
+   ```bash
+   chmod 700 ~/.ssh
+   chmod 600 ~/.ssh/authorized_keys
+   ```
+
+3. **Test SSH Connection**
+   ```bash
+   ssh user@sftp-ip
+   ```
+
+4. **Use SSH in GoCD Pipelines**
+   - You can now configure SSH tasks in GoCD to interact with the SFTP machine.
+
+5. **(Optional) Disable Password Authentication**
+   - Edit SSH configuration on the SFTP machine:
+     ```bash
+     sudo nano /etc/ssh/sshd_config
+     ```
+     Update:
+     ```text
+     PasswordAuthentication no
+     ChallengeResponseAuthentication no
+     ```
+     Restart SSH:
+     ```bash
+     sudo systemctl restart sshd
+     ```
+
+---
+
+### Notes
+- Ensure that the GoCD server and agents are properly configured and communicating.
+- Follow best practices for securing SSH and sensitive configuration files.
+- Regularly monitor logs for troubleshooting.
+
+---
+
+## License
+This project is licensed under the MIT License.
